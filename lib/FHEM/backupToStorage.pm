@@ -47,6 +47,7 @@ BEGIN {
     GP_Import(
         qw(
           readingsSingleUpdate
+          ReadingsVal
           defs
           modules
           setKeyValue
@@ -59,7 +60,8 @@ BEGIN {
           deviceEvents
           init_done
           devspec2array
-          DoTrigger)
+          DoTrigger
+          HttpUtils_NonblockingGet)
     );
 }
 
@@ -133,8 +135,10 @@ sub Notify {
           . Dumper $events);    # mit Dumper
 
     PushToStorage($hash)
-      if ( grep m{^backup done$}xms,
-        @{$events} && $devname eq 'global' && $init_done );
+      if ( (grep m{^backup.done(.+)?$}xms, @{$events})
+        && $devname eq 'global'
+        && $init_done
+      );
 
     CheckAttributsForCredentials($hash)
       if (
@@ -173,8 +177,9 @@ sub Notify {
       )
       if (
         (
-            grep m{^DEFINED.$name$}xms,
-            @{$events} && $devname eq 'global' && $init_done
+               (grep m{^DEFINED.$name$}xms,@{$events})
+            && $devname eq 'global'
+            && $init_done
         )
         || (
             grep m{^INITIALIZED$}xms,
@@ -233,11 +238,11 @@ sub PushToStorage {
 
     my $name = $hash->{NAME};
 
-    Log3 $name, 4, "backupToStorage ($name) - push to storage function";
+    Log3($name, 4, "backupToStorage ($name) - push to storage function");
 
     if ( AttrVal( $name, 'bTSType', 'Nextcloud' ) eq 'Nextcloud' ) {
-        Log3 $name, 4,
-"backupToStorage ($name) - push to storage function: Nextcloud detected";
+        Log3($name, 4,
+"backupToStorage ($name) - push to storage function: Nextcloud detected");
         ncUpload( $hash, ReadingsVal( $name, 'fhemBackupFile', 'none' ) );
     }
 
@@ -250,7 +255,7 @@ sub ncUpload {
 
     my $name = $hash->{NAME};
 
-    Log3 $name, 4, "backupToStorage ($name) - nextcloud upload function";
+    Log3($name, 4, "backupToStorage ($name) - nextcloud upload function");
 
     open FD, '<',
       "$backupFile"
@@ -280,13 +285,13 @@ sub ncUpload {
           . $ncUser . '/'
           . $ncPath . '/'
           . $fhemBackupFile,
-        timeout  => AttrVal( $name, 'btS_UploadTimeout', 30 ),
+        timeout  => AttrVal( $name, 'btS_UploadTimeout', 15 ),
         method   => 'PUT',
         data     => $cont,
         hash     => $hash,
         user     => $ncUser,
         pwd      => $ncPass,
-        callback => \&FHEM::backup::ncUploadCb,
+        callback => \&FHEM::backupToStorage::ncUploadCb,
     };
 
     HttpUtils_NonblockingGet($param);
@@ -303,9 +308,9 @@ sub ncUploadCb {
     my $hash = $param->{hash};
     my $name = $hash->{NAME};
 
-    Log( 1, 'backup URL: ' . $param->{url} );
-    Log( 1, 'backup User: ' . $param->{user} );
-    Log( 1, 'backup Pass: ' . $param->{pwd} );
+    Log3($name, 1, "backupToStorage ($name) - backup URL: $param->{url}");
+    Log3($name, 1, "backupToStorage ($name) - backup User: $param->{user}");
+    Log3($name, 1, "backupToStorage ($name) - backup Pass: $param->{pwd}");
 
     Log3(
         $name, 3,
@@ -360,14 +365,14 @@ sub ReadPassword {
     my $key   = getUniqueId() . $index;
     my ( $password, $err );
 
-    Log3 $name, 4, "backupToStorage ($name) - Read password from file";
+    Log3($name, 4, "backupToStorage ($name) - Read password from file");
 
     ( $err, $password ) = getKeyValue($index);
 
     if ( defined($err) ) {
 
-        Log3 $name, 3,
-          "backupToStorage ($name) - unable to read password from file: $err";
+        Log3($name, 3,
+          "backupToStorage ($name) - unable to read password from file: $err");
         return undef;
     }
 
@@ -389,7 +394,7 @@ sub ReadPassword {
         return $dec_pwd;
     }
     else {
-        Log3 $name, 3, "backupToStorage ($name) - No password in file";
+        Log3($name, 3, "backupToStorage ($name) - No password in file");
         return undef;
     }
 
