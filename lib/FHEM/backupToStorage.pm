@@ -79,17 +79,6 @@ sub Define {
     $hash->{VERSION}   = version->parse($VERSION)->normal;
     $hash->{NOTIFYDEV} = 'global';
 
-    readingsSingleUpdate( $hash, 'state',
-        ( 
-               (AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
-            || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
-            || !defined( ReadPassword( $hash, $name ) ) )
-          ? 'please set storage account credentials first'
-          : 'ready'
-        )
-        , 1
-    );
-
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
     return;
@@ -143,19 +132,43 @@ sub Notify {
           . Dumper $events);    # mit Dumper
 
     PushToStorage($hash)
-      if ( grep /^backup.done/,
+      if ( grep m{^backup.done}xms,
         @{$events} && $devname eq 'global' && $init_done );
 
     CheckAttributsForCredentials($hash)
       if (
         (
-            grep /^DELETEATTR.$name.(bTS_Host|bTS_User)$/,
+            grep m{^DELETEATTR.$name.(bTS_Host|bTS_User)$}xms,
             @{$events}
-            or grep /^ATTR.$name.(bTS_Host|bTS_User).\S+$/,
+            or grep m{^ATTR.$name.(bTS_Host|bTS_User).\S+$}xms,
             @{$events}
         )
         && $devname eq 'global'
         && $init_done
+      );
+      
+    readingsSingleUpdate( $hash, 'state',
+        ( 
+               (AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
+            || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
+            || !defined( ReadPassword( $hash, $name ) ) )
+          ? 'please set storage account credentials first'
+          : 'ready'
+        )
+        , 1
+    )
+      if (
+        (
+            grep m{^DEFINED.$name$}xms,
+            @{$events} && $devname eq 'global' && $init_done
+        )
+        || (
+            grep m{^INITIALIZED$}xms,
+            @{$events} or grep m{^REREADCFG$}xms,
+            @{$events} or grep m{^MODIFIED.$name$}xms,
+            @{$events}
+        )
+        && $devname eq 'global'
       );
 
     return;
