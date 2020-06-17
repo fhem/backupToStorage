@@ -253,9 +253,9 @@ sub ncUpload {
         user     => $ncUser,
         pwd      => $ncPass,
         callback => \&FHEM::backup::ncUploadCb,
-      }
+      };
 
-      HttpUtils_NonblockingGet($param);
+    HttpUtils_NonblockingGet($param);
     $hash->{helper}->{HttpUtilsParam} = $param;
 
     return;
