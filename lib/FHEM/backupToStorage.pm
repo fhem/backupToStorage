@@ -111,7 +111,7 @@ sub Delete {
 }
 
 sub Shutdown {
-    $hash = shift;
+    my $hash = shift;
 
     HttpUtils_Close( $hash->{helper}->{HttpUtilsParam} )
       if ( $hash->{helper}->{HttpUtilsParam} );
@@ -250,6 +250,7 @@ sub ncUpload {
         timeout  => AttrVal( $name, 'btS_UploadTimeout', 30 ),
         method   => 'PUT',
         data     => $cont,
+        hash     => $hash,
         user     => $ncUser,
         pwd      => $ncPass,
         callback => \&FHEM::backup::ncUploadCb,
@@ -262,9 +263,12 @@ sub ncUpload {
 }
 
 sub ncUploadCb {
-    my $param = shift;
-    my $err   = shift;
-    my $data  = shift;
+    my $param   = shift;
+    my $err     = shift;
+    my $data    = shift;
+    
+    my $hash    = $param->{hash};
+    my $name    = $hash->{NAME};
 
     Log( 1, 'backup URL: ' . $param->{url} );
     Log( 1, 'backup User: ' . $param->{user} );
