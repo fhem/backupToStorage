@@ -380,13 +380,13 @@ sub CheckAttributsForCredentials {
     my $ncPath = AttrVal( $name, 'bTS_Path', 'none' );
     my $status = 'ready';
 
-    $status eq 'ready'
+    $status = ($status eq 'ready'
             && $ncUser eq 'none'    ? 'no user credential attribut'
       : $status eq 'ready'
             && $ncHost eq 'none'    ? 'no host credential attribut'
       : $status eq 'ready'
             && !defined($ncPass)    ? 'no password set'
-      : $status;
+      : $status);
 
     return readingsSingleUpdate( $hash, 'state', $status, 1 );
 }
