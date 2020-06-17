@@ -103,6 +103,26 @@ sub Undef {
     return;
 }
 
+sub Delete {
+    my $hash = shift;
+    my $name = shift;
+
+    HttpUtils_Close( $hash->{helper}->{HttpUtilsParam} )
+      if ( $hash->{helper}->{HttpUtilsParam} );
+    DeletePassword($hash);
+
+    return;
+}
+
+sub Shutdown {
+    $hash = shift;
+
+    HttpUtils_Close( $hash->{helper}->{HttpUtilsParam} )
+      if ( $hash->{helper}->{HttpUtilsParam} );
+
+    return;
+}
+
 sub Notify {
     my $hash = shift // return;
     my $dev  = shift // return;
@@ -156,10 +176,98 @@ sub Set {
     return;
 }
 
+sub Rename {
+    my $new = shift;
+    my $old = shift;
+
+    my $hash = $defs{$new};
+
+    StorePassword( $hash, $new, ReadPassword( $hash, $old ) );
+    setKeyValue( $hash->{TYPE} . "_" . $old . "_passwd", undef );
+
+    return;
+}
+
 sub PushToStorage {
     my $hash = shift;
 
     my $name = $hash->{NAME};
+
+    if ( AttrVal( $name, 'bTSType', 'Nextcloud' ) eq 'Nextcloud' ) {
+        ncUpload( $hash, ReadingsVal( $name, 'fhemBackupFile', 'none' ) );
+    }
+
+    return;
+}
+
+sub ncUpload {
+    my $hash       = shift;
+    my $backupFile = shift;
+
+    my $name = $hash->{NAME};
+
+    open FD, '<',
+      "$backupFile"
+      or return Log3( $name, 1,
+"backupToStorage ($name) - ncUpload: can\'t open backupfile for Nextcloud upload"
+      );
+
+    binmode FD;
+
+    local $/ = undef;    # $/ is $INPUT_RECORD_SEPARATOR or $RS in English
+    my $cont = <FD>;
+
+    close FD;
+
+    my $ncUser = AttrVal( $name, 'bTS_User', '' );
+    my $ncPass = ReadPassword( $hash, $name );
+    my $ncHost = AttrVal( $name, 'bTS_Host', '' );
+    my $ncPath = AttrVal( $name, 'bTS_Path', '' );
+    my @fhemBackupFiles = split( '/',
+        ReadingsVal( $name, 'fhemBackupFile', 'no-FHEM-backup-name.tar.gz' ) );
+    my $fhemBackupFile = $fhemBackupFiles[$#fhemBackupFiles];
+
+    my $param = {
+        url => 'https://'
+          . $ncHost
+          . '/remote.php/dav/files/'
+          . $ncUser . '/'
+          . $ncPath . '/'
+          . $fhemBackupFile,
+        timeout  => AttrVal( $name, 'btS_UploadTimeout', 30 ),
+        method   => 'PUT',
+        data     => $cont,
+        user     => $ncUser,
+        pwd      => $ncPass,
+        callback => \&FHEM::backup::ncUploadCb,
+      }
+
+      HttpUtils_NonblockingGet($param);
+    $hash->{helper}->{HttpUtilsParam} = $param;
+
+    return;
+}
+
+sub ncUploadCb {
+    my $param = shift;
+    my $err   = shift;
+    my $data  = shift;
+
+    Log( 1, 'backup URL: ' . $param->{url} );
+    Log( 1, 'backup User: ' . $param->{user} );
+    Log( 1, 'backup Pass: ' . $param->{pwd} );
+
+    Log3(
+        $name, 3,
+        "backupToStorage ($name) - callback: backup Nextcloud upload "
+          . (
+            ( $data or $err )
+            ? 'failed - Error: ' . $err . ' Data: ' . $data
+            : 'succesfully'
+          )
+    );
+
+    delete $hash->{helper}->{HttpUtilsParam};
 
     return;
 }
@@ -236,14 +344,12 @@ sub ReadPassword {
     return;
 }
 
-sub Rename {
-    my $new = shift;
-    my $old = shift;
+sub DeletePassword {
+    my $hash = shift;
 
-    my $hash = $defs{$new};
-
-    StorePassword( $hash, $new, ReadPassword( $hash, $old ) );
-    setKeyValue( $hash->{TYPE} . "_" . $old . "_passwd", undef );
+    setKeyValue( $hash->{TYPE} . "_" . $hash->{NAME} . "_passwd", undef );
 
     return;
 }
+
+1;
