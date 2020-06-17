@@ -80,10 +80,15 @@ sub Define {
     $hash->{NOTIFYDEV} = 'global';
 
     readingsSingleUpdate( $hash, 'state',
-        'please set storage account credentials first', 1 )
-      if ( AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
-        || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
-        || !defined( ReadPassword( $hash, $name ) ) );
+        ( 
+               (AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
+            || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
+            || !defined( ReadPassword( $hash, $name ) ) )
+          ? 'please set storage account credentials first'
+          : 'ready'
+        )
+        , 1
+    );
 
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
