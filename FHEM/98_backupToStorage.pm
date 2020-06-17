@@ -6,7 +6,7 @@
 #  All rights reserved
 #
 #   Special thanks goes to:
-#       - 
+#       -
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -37,7 +37,6 @@ use utf8;
 
 use FHEM::backupToStorage;
 
-
 sub backupToStorage_Initialize {
     my $hash = shift;
 
@@ -47,10 +46,7 @@ sub backupToStorage_Initialize {
     $hash->{DefFn}    = \&FHEM::backupToStorage::Define;
     $hash->{NotifyFn} = \&FHEM::backupToStorage::Notify;
     $hash->{UndefFn}  = \&FHEM::backupToStorage::Undef;
-    $hash->{AttrList} =
-        'bTS_Host '
-      . 'bTS_User '
-      . 'bTS_Path ';
+    $hash->{AttrList} = 'bTS_Host ' . 'bTS_User ' . 'bTS_Path ';
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
