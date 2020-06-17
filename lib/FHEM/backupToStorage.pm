@@ -133,7 +133,7 @@ sub Notify {
           . Dumper $events);    # mit Dumper
 
     PushToStorage($hash)
-      if ( grep m{^backup.done}xms,
+      if ( grep m{^backup done$}xms,
         @{$events} && $devname eq 'global' && $init_done );
 
     CheckAttributsForCredentials($hash)
