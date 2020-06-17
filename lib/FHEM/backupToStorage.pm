@@ -77,7 +77,7 @@ sub Define {
 
     my $name = shift @$aArg;
     $hash->{VERSION}   = version->parse($VERSION)->normal;
-    $hash->{NOTIFYDEV} = 'global';
+    $hash->{NOTIFYDEV} = 'global,' . $name;
 
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
@@ -137,26 +137,39 @@ sub Notify {
 
     CheckAttributsForCredentials($hash)
       if (
-        (
-            grep m{^DELETEATTR.$name.(bTS_Host|bTS_User)$}xms,
-            @{$events}
-            or grep m{^ATTR.$name.(bTS_Host|bTS_User).\S+$}xms,
-            @{$events}
-        )
-        && $devname eq 'global'
-        && $init_done
+           (
+             (
+                (
+                    grep m{^DELETEATTR.$name.(bTS_Host|bTS_User)$}xms,
+                    @{$events}
+                    or grep m{^ATTR.$name.(bTS_Host|bTS_User).\S+$}xms,
+                    @{$events}
+                )
+                && $devname eq 'global'
+             )
+             || (
+                  (
+                    $devname eq $name && grep m{^password:.(add|remove)$}xms,
+                    @{$events}
+                  )
+             )
+           )
+           && $init_done
       );
-      
-    readingsSingleUpdate( $hash, 'state',
-        ( 
-               (AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
-            || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
-            || !defined( ReadPassword( $hash, $name ) ) )
-          ? 'please set storage account credentials first'
-          : 'ready'
-        )
-        , 1
-    )
+
+    readingsSingleUpdate(
+        $hash, 'state',
+        (
+            (
+                     AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
+                  || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
+                  || !defined( ReadPassword( $hash, $name ) )
+            )
+            ? 'please set storage account credentials first'
+            : 'ready'
+        ),
+        1
+      )
       if (
         (
             grep m{^DEFINED.$name$}xms,
@@ -218,11 +231,12 @@ sub PushToStorage {
     my $hash = shift;
 
     my $name = $hash->{NAME};
-    
+
     Log3 $name, 4, "backupToStorage ($name) - push to storage function";
 
     if ( AttrVal( $name, 'bTSType', 'Nextcloud' ) eq 'Nextcloud' ) {
-        Log3 $name, 4, "backupToStorage ($name) - push to storage function: Nextcloud detected";
+        Log3 $name, 4,
+"backupToStorage ($name) - push to storage function: Nextcloud detected";
         ncUpload( $hash, ReadingsVal( $name, 'fhemBackupFile', 'none' ) );
     }
 
@@ -234,7 +248,7 @@ sub ncUpload {
     my $backupFile = shift;
 
     my $name = $hash->{NAME};
-    
+
     Log3 $name, 4, "backupToStorage ($name) - nextcloud upload function";
 
     open FD, '<',
@@ -272,7 +286,7 @@ sub ncUpload {
         user     => $ncUser,
         pwd      => $ncPass,
         callback => \&FHEM::backup::ncUploadCb,
-      };
+    };
 
     HttpUtils_NonblockingGet($param);
     $hash->{helper}->{HttpUtilsParam} = $param;
@@ -281,12 +295,12 @@ sub ncUpload {
 }
 
 sub ncUploadCb {
-    my $param   = shift;
-    my $err     = shift;
-    my $data    = shift;
-    
-    my $hash    = $param->{hash};
-    my $name    = $hash->{NAME};
+    my $param = shift;
+    my $err   = shift;
+    my $data  = shift;
+
+    my $hash = $param->{hash};
+    my $name = $hash->{NAME};
 
     Log( 1, 'backup URL: ' . $param->{url} );
     Log( 1, 'backup User: ' . $param->{user} );
@@ -330,6 +344,8 @@ sub StorePassword {
     }
 
     my $err = setKeyValue( $index, $enc_pwd );
+    DoTrigger( $name, 'password add' );
+
     return "error while saving the password - $err" if ( defined($err) );
 
     return "password successfully saved";
@@ -382,7 +398,10 @@ sub ReadPassword {
 sub DeletePassword {
     my $hash = shift;
 
-    setKeyValue( $hash->{TYPE} . "_" . $hash->{NAME} . "_passwd", undef );
+    my $name = $hash->{NAME};
+
+    setKeyValue( $hash->{TYPE} . "_" . $name . "_passwd", undef );
+    DoTrigger( $name, 'password remove' );
 
     return;
 }
@@ -398,13 +417,13 @@ sub CheckAttributsForCredentials {
     my $ncPath = AttrVal( $name, 'bTS_Path', 'none' );
     my $status = 'ready';
 
-    $status = ($status eq 'ready'
-            && $ncUser eq 'none'    ? 'no user credential attribut'
-      : $status eq 'ready'
-            && $ncHost eq 'none'    ? 'no host credential attribut'
-      : $status eq 'ready'
-            && !defined($ncPass)    ? 'no password set'
-      : $status);
+    $status = (
+        $status eq 'ready' && $ncUser eq 'none' ? 'no user credential attribut'
+        : $status eq 'ready'
+          && $ncHost eq 'none' ? 'no host credential attribut'
+        : $status eq 'ready' && !defined($ncPass) ? 'no password set'
+        :                                           $status
+    );
 
     return readingsSingleUpdate( $hash, 'state', $status, 1 );
 }
