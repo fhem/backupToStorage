@@ -6,7 +6,7 @@
 #  All rights reserved
 #
 #   Special thanks goes to:
-#       - 
+#       -
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -53,6 +53,9 @@ BEGIN {
           readingsEndUpdate
           defs
           modules
+          setKeyValue
+          getKeyValue
+          getUniqueId
           Log3
           CommandAttr
           attr
@@ -79,6 +82,12 @@ sub Define {
     my $name = shift @$aArg;
     $hash->{VERSION}   = version->parse($VERSION)->normal;
     $hash->{NOTIFYDEV} = 'global';
+
+    readingsSingleUpdate( $hash, 'state',
+        'please set storage account credentials first', 1 )
+      if ( AttrVal( $name, 'bTS_Host', 'none' ) eq 'none'
+        || AttrVal( $name, 'bTS_User', 'none' ) eq 'none'
+        || !defined( ReadPassword( $hash, $name ) ) );
 
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
@@ -113,21 +122,11 @@ sub Notify {
           . Dumper $events);    # mit Dumper
 
     PushToStorage($hash)
-      if (
-        (
-            grep /^backup.done/,
-                @{$events}
-              and $devname eq 'global'
-              &&  $init_done)
-        )
-        and defined( $hash->{UID} )
-      );
+      if ( grep /^backup.done/,
+        @{$events} && $devname eq 'global' && $init_done );
 
-    return
+    return;
 }
-
-
-
 
 sub Set {
     my $hash = shift // return;
@@ -138,6 +137,8 @@ sub Set {
       // return qq{"set $name" needs at least one argument};
 
     if ( lc $cmd eq 'addpassword' ) {
+        return "please set Attribut bTS_User first"
+          if ( AttrVal( $name, 'bTS_User', 'none' ) eq 'none' );
         return "usage: $cmd <password>" if ( scalar( @{$aArg} ) != 1 );
 
         StorePassword( $hash, $name, $aArg->[0] );
@@ -148,22 +149,18 @@ sub Set {
         DeletePassword($hash);
     }
     else {
-        return 'Unknown argument '
-            . $cmd
-            . ', choose one of addpassword,deletepassword';
+        return 'Unknown argument ' . $cmd
+          . ', choose one of addpassword,deletepassword';
     }
-    
+
     return;
 }
 
 sub PushToStorage {
-    my $hash    = shift;
-    
-    my $name    = $hash->{NAME};
+    my $hash = shift;
 
-    
-    
-    
+    my $name = $hash->{NAME};
+
     return;
 }
 
@@ -210,14 +207,12 @@ sub ReadPassword {
     if ( defined($err) ) {
 
         Log3 $name, 3,
-"backupToStorage ($name) - unable to read password from file: $err";
+          "backupToStorage ($name) - unable to read password from file: $err";
         return undef;
-
     }
 
     if ( defined($password) ) {
         if ( eval "use Digest::MD5;1" ) {
-
             $key = Digest::MD5::md5_hex( unpack "H*", $key );
             $key .= Digest::MD5::md5_hex($key);
         }
@@ -232,10 +227,8 @@ sub ReadPassword {
         }
 
         return $dec_pwd;
-
     }
     else {
-
         Log3 $name, 3, "backupToStorage ($name) - No password in file";
         return undef;
     }
