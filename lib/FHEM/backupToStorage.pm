@@ -58,7 +58,8 @@ BEGIN {
           AttrVal
           deviceEvents
           init_done
-          devspec2array)
+          devspec2array
+          DoTrigger)
     );
 }
 
@@ -209,7 +210,7 @@ sub Set {
     }
     else {
         return 'Unknown argument ' . $cmd
-          . ', choose one of addpassword deletepassword';
+          . ', choose one of addpassword deletepassword:noArg';
     }
 
     return;
