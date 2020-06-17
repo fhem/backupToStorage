@@ -178,7 +178,7 @@ sub Set {
     }
     else {
         return 'Unknown argument ' . $cmd
-          . ', choose one of addpassword,deletepassword';
+          . ', choose one of addpassword deletepassword';
     }
 
     return;
