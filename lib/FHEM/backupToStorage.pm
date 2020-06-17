@@ -47,10 +47,6 @@ BEGIN {
     GP_Import(
         qw(
           readingsSingleUpdate
-          readingsBulkUpdate
-          readingsBulkUpdateIfChanged
-          readingsBeginUpdate
-          readingsEndUpdate
           defs
           modules
           setKeyValue
@@ -144,6 +140,18 @@ sub Notify {
     PushToStorage($hash)
       if ( grep /^backup.done/,
         @{$events} && $devname eq 'global' && $init_done );
+
+    CheckAttributsForCredentials($hash)
+      if (
+        (
+            grep /^DELETEATTR.$name.(bTS_Host|bTS_User)$/,
+            @{$events}
+            or grep /^ATTR.$name.(bTS_Host|bTS_User).\S+$/,
+            @{$events}
+        )
+        && $devname eq 'global'
+        && $init_done
+      );
 
     return;
 }
@@ -350,6 +358,28 @@ sub DeletePassword {
     setKeyValue( $hash->{TYPE} . "_" . $hash->{NAME} . "_passwd", undef );
 
     return;
+}
+
+sub CheckAttributsForCredentials {
+    my $hash = shift;
+
+    my $name = $hash->{NAME};
+
+    my $ncUser = AttrVal( $name, 'bTS_User', 'none' );
+    my $ncPass = ReadPassword( $hash, $name );
+    my $ncHost = AttrVal( $name, 'bTS_Host', 'none' );
+    my $ncPath = AttrVal( $name, 'bTS_Path', 'none' );
+    my $status = 'ready';
+
+    $status eq 'ready'
+            && $ncUser eq 'none'    ? 'no user credential attribut'
+      : $status eq 'ready'
+            && $ncHost eq 'none'    ? 'no host credential attribut'
+      : $status eq 'ready'
+            && !defined($ncPass)    ? 'no password set'
+      : $status;
+
+    return readingsSingleUpdate( $hash, 'state', $status, 1 );
 }
 
 1;
