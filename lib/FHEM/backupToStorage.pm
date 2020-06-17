@@ -150,7 +150,7 @@ sub Notify {
              )
              || (
                   (
-                    $devname eq $name && grep m{^password:.(add|remove)$}xms,
+                    $devname eq $name && grep m{^password.(add|remove)$}xms,
                     @{$events}
                   )
              )
