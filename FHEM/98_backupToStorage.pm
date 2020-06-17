@@ -42,12 +42,20 @@ sub backupToStorage_Initialize {
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = \&FHEM::backupToStorage::Set;
-    $hash->{DefFn}    = \&FHEM::backupToStorage::Define;
-    $hash->{NotifyFn} = \&FHEM::backupToStorage::Notify;
-    $hash->{UndefFn}  = \&FHEM::backupToStorage::Undef;
-    $hash->{AttrList} = 'bTS_Host ' . 'bTS_User ' . 'bTS_Path ';
+    $hash->{SetFn}      = \&FHEM::backupToStorage::Set;
+    $hash->{DefFn}      = \&FHEM::backupToStorage::Define;
+    $hash->{NotifyFn}   = \&FHEM::backupToStorage::Notify;
+    $hash->{UndefFn}    = \&FHEM::backupToStorage::Undef;
+    $hash->{RenameFn}   = \&FHEM::backupToStorage::Rename;
+    $hash->{DeleteFn}   = \&FHEM::backupToStorage::Delete;
+    $hash->{ShutdownFn} = \&FHEM::backupToStorage::Shutdown;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
+    $hash->{AttrList} =
+        'bTS_Host '
+      . 'bTS_User '
+      . 'bTS_Path '
+      . 'btS_UploadTimeout '
+      . 'bTSType:Nextcloud';
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
 }
