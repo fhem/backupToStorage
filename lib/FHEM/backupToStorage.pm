@@ -200,8 +200,11 @@ sub PushToStorage {
     my $hash = shift;
 
     my $name = $hash->{NAME};
+    
+    Log3 $name, 4, "backupToStorage ($name) - push to storage function";
 
     if ( AttrVal( $name, 'bTSType', 'Nextcloud' ) eq 'Nextcloud' ) {
+        Log3 $name, 4, "backupToStorage ($name) - push to storage function: Nextcloud detected";
         ncUpload( $hash, ReadingsVal( $name, 'fhemBackupFile', 'none' ) );
     }
 
@@ -213,6 +216,8 @@ sub ncUpload {
     my $backupFile = shift;
 
     my $name = $hash->{NAME};
+    
+    Log3 $name, 4, "backupToStorage ($name) - nextcloud upload function";
 
     open FD, '<',
       "$backupFile"
