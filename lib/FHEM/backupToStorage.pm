@@ -155,8 +155,9 @@ sub Define {
       if ( scalar( @{$aArg} ) != 2 );
 
     my $name = shift @$aArg;
-    $hash->{VERSION}   = version->parse($VERSION)->normal;
-    $hash->{NOTIFYDEV} = 'global,' . $name;
+    $hash->{VERSION}        = version->parse($VERSION)->normal;
+    $hash->{NOTIFYDEV}      = 'global,' . $name;
+    $hash->{STORAGETYPE}    = AttrVal( $name, 'bTSType', 'Nextcloud' );
 
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
@@ -328,7 +329,9 @@ sub PushToStorage {
     my @fileNameAtStorage_array = split( '/', $backupFile );
     my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
 
-    $subprocess->{type} = AttrVal( $name, 'bTSType',  'Nextcloud' );
+    $subprocess->{curl} = qx(which curl);
+    chomp($subprocess->{curl});
+    $subprocess->{type} = $hash->{STORAGETYPE};
     $subprocess->{host} = AttrVal( $name, 'bTS_Host', '' );
     $subprocess->{user} = AttrVal( $name, 'bTS_User', '' );
     $subprocess->{pass} = ReadPassword( $hash, $name );
@@ -404,7 +407,12 @@ sub FileUpload {
     my $response   = {};
 
     if ( $subprocess->{type} eq 'Nextcloud' ) {
-        $response->{ncUpload} = ExecuteNCupload($subprocess);
+        my ($returnString,$returnCode) = ExecuteNCupload($subprocess);
+
+        $response->{ncUpload} = ( $returnCode == 72057594037927935
+          && $returnString eq ''
+            ? 'upload successfully'
+            : $returnString );
     }
 
     my $json = eval { encode_json($response) };
@@ -422,7 +430,8 @@ sub FileUpload {
 sub ExecuteNCupload {
     my $subprocess = shift;
 
-    my $command = 'curl -u ';
+    my $command = $subprocess->{curl};
+    $command .= ' -s -u ';
     $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' -T ' . $subprocess->{backupfile};
     $command .= ' "https://';
@@ -433,10 +442,13 @@ sub ExecuteNCupload {
     $command .= '/';
     $command .= $subprocess->{fileNameAtStorage};
     $command .= '"';
-    
-    print 'DEBUG!!! - Command: ' . $command . "\n";
 
-    return qx{$command};
+    return ExecuteCommand($command);
+}
+
+sub ExecuteCommand {
+    my $command = join q{ }, @_;
+    return ( $_ = qx{$command 2>&1}, $? >> 8 );
 }
 
 ######################################
@@ -546,15 +558,18 @@ sub CheckAttributsForCredentials {
     my $ncUser = AttrVal( $name, 'bTS_User', 'none' );
     my $ncPass = ReadPassword( $hash, $name );
     my $ncHost = AttrVal( $name, 'bTS_Host', 'none' );
-    my $ncPath = AttrVal( $name, 'bTS_Path', 'none' );
     my $status = 'ready';
 
-    $status = (
-        $status eq 'ready' && $ncUser eq 'none' ? 'no user credential attribut'
-        : $status eq 'ready'
-          && $ncHost eq 'none' ? 'no host credential attribut'
-        : $status eq 'ready' && !defined($ncPass) ? 'no password set'
-        :                                           $status
+    $status = ( $status eq 'ready'
+                    && $ncUser eq 'none'
+                        ? 'no user credential attribut'
+                        : $status eq 'ready'
+                    && $ncHost eq 'none'
+                        ? 'no host credential attribut'
+                        : $status eq 'ready'
+                    && !defined($ncPass)
+                        ? 'no password set'
+                        : $status
     );
 
     return readingsSingleUpdate( $hash, 'state', $status, 1 );
