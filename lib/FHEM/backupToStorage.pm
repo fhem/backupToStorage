@@ -35,9 +35,80 @@ use strict;
 use warnings;
 use utf8;
 
-use GPUtils qw(GP_Import GP_Export);
+use GPUtils qw(GP_Import);
 
 use Data::Dumper;    #only for Debugging
+
+# try to use JSON::MaybeXS wrapper
+#   for chance of better performance + open code
+eval {
+    require JSON::MaybeXS;
+    import JSON::MaybeXS qw( decode_json encode_json );
+    1;
+};
+
+if ($@) {
+    $@ = undef;
+
+    # try to use JSON wrapper
+    #   for chance of better performance
+    eval {
+
+        # JSON preference order
+        local $ENV{PERL_JSON_BACKEND} =
+          'Cpanel::JSON::XS,JSON::XS,JSON::PP,JSON::backportPP'
+          unless ( defined( $ENV{PERL_JSON_BACKEND} ) );
+
+        require JSON;
+        import JSON qw( decode_json encode_json );
+        1;
+    };
+
+    if ($@) {
+        $@ = undef;
+
+        # In rare cases, Cpanel::JSON::XS may
+        #   be installed but JSON|JSON::MaybeXS not ...
+        eval {
+            require Cpanel::JSON::XS;
+            import Cpanel::JSON::XS qw(decode_json encode_json);
+            1;
+        };
+
+        if ($@) {
+            $@ = undef;
+
+            # In rare cases, JSON::XS may
+            #   be installed but JSON not ...
+            eval {
+                require JSON::XS;
+                import JSON::XS qw(decode_json encode_json);
+                1;
+            };
+
+            if ($@) {
+                $@ = undef;
+
+                # Fallback to built-in JSON which SHOULD
+                #   be available since 5.014 ...
+                eval {
+                    require JSON::PP;
+                    import JSON::PP qw(decode_json encode_json);
+                    1;
+                };
+
+                if ($@) {
+                    $@ = undef;
+
+                    # Fallback to JSON::backportPP in really rare cases
+                    require JSON::backportPP;
+                    import JSON::backportPP qw(decode_json encode_json);
+                    1;
+                }
+            }
+        }
+    }
+}
 
 ## Import der FHEM Funktionen
 #-- Run before package compilation
@@ -47,7 +118,12 @@ BEGIN {
     GP_Import(
         qw(
           readingsSingleUpdate
+          readingsBulkUpdate
+          readingsBeginUpdate
+          readingsEndUpdate
           ReadingsVal
+          gettimeofday
+          InternalTimer
           defs
           modules
           setKeyValue
@@ -135,15 +211,14 @@ sub Notify {
           . Dumper $events);    # mit Dumper
 
     PushToStorage($hash)
-      if ( (grep m{^backup.done(.+)?$}xms, @{$events})
+      if ( ( grep m{^backup.done(.+)?$}xms, @{$events} )
         && $devname eq 'global'
-        && $init_done
-      );
+        && $init_done );
 
     CheckAttributsForCredentials($hash)
       if (
-           (
-             (
+        (
+            (
                 (
                     grep m{^DELETEATTR.$name.(bTS_Host|bTS_User)$}xms,
                     @{$events}
@@ -151,15 +226,15 @@ sub Notify {
                     @{$events}
                 )
                 && $devname eq 'global'
-             )
-             || (
-                  (
+            )
+            || (
+                (
                     $devname eq $name && grep m{^password.(add|remove)$}xms,
                     @{$events}
-                  )
-             )
-           )
-           && $init_done
+                )
+            )
+        )
+        && $init_done
       );
 
     readingsSingleUpdate(
@@ -177,7 +252,7 @@ sub Notify {
       )
       if (
         (
-               (grep m{^DEFINED.$name$}xms,@{$events})
+               ( grep m{^DEFINED.$name$}xms, @{$events} )
             && $devname eq 'global'
             && $init_done
         )
@@ -214,8 +289,13 @@ sub Set {
         DeletePassword($hash);
     }
     else {
-        return 'Unknown argument ' . $cmd
-          . ', choose one of addpassword deletepassword:noArg';
+        my $list = (
+            defined( ReadPassword( $hash, $name ) )
+            ? 'deletepassword:noArg'
+            : 'addpassword'
+        );
+
+        return 'Unknown argument ' . $cmd . ', choose one of ' . $list;
     }
 
     return;
@@ -238,93 +318,138 @@ sub PushToStorage {
 
     my $name = $hash->{NAME};
 
-    Log3($name, 4, "backupToStorage ($name) - push to storage function");
+    Log3( $name, 4, "backupToStorage ($name) - push to storage function" );
 
-    if ( AttrVal( $name, 'bTSType', 'Nextcloud' ) eq 'Nextcloud' ) {
-        Log3($name, 4,
-"backupToStorage ($name) - push to storage function: Nextcloud detected");
-        ncUpload( $hash, ReadingsVal( $name, 'fhemBackupFile', 'none' ) );
+    require "SubProcess.pm";
+    my $subprocess = SubProcess->new( { onRun => \&FileUpload } );
+
+    my $backupFile = ReadingsVal( $name, 'fhemBackupFile', 'none' );
+
+    my @fileNameAtStorage_array = split( '/', $backupFile );
+    my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
+
+    $subprocess->{type} = AttrVal( $name, 'bTSType',  'Nextcloud' );
+    $subprocess->{host} = AttrVal( $name, 'bTS_Host', '' );
+    $subprocess->{user} = AttrVal( $name, 'bTS_User', '' );
+    $subprocess->{pass} = ReadPassword( $hash, $name );
+    $subprocess->{path}              = AttrVal( $name, 'bTS_Path', '' );
+    $subprocess->{backupfile}        = $backupFile;
+    $subprocess->{fileNameAtStorage} = $fileNameAtStorage;
+
+    my $pid = $subprocess->run();
+
+    readingsSingleUpdate( $hash, 'state', ' file upload in progress', 1 );
+
+    if ( !defined($pid) ) {
+        Log3( $name, 1,
+            "backupToStorage ($name) - Cannot execute command asynchronously" );
+
+        CleanSubprocess($hash);
+        readingsSingleUpdate( $hash, 'state',
+            'Cannot execute command asynchronously', 1 );
+        return undef;
     }
 
-    return;
-}
-
-sub ncUpload {
-    my $hash       = shift;
-    my $backupFile = shift;
-
-    my $name = $hash->{NAME};
-
-    Log3($name, 4, "backupToStorage ($name) - nextcloud upload function");
-
-    open FD, '<',
-      "$backupFile"
-      or return Log3( $name, 1,
-"backupToStorage ($name) - ncUpload: can\'t open backupfile for Nextcloud upload"
-      );
-
-    binmode FD;
-
-    local $/ = undef;    # $/ is $INPUT_RECORD_SEPARATOR or $RS in English
-    my $cont = <FD>;
-
-    close FD;
-
-    my $ncUser = AttrVal( $name, 'bTS_User', '' );
-    my $ncPass = ReadPassword( $hash, $name );
-    my $ncHost = AttrVal( $name, 'bTS_Host', '' );
-    my $ncPath = AttrVal( $name, 'bTS_Path', '' );
-    my @fhemBackupFiles = split( '/',
-        ReadingsVal( $name, 'fhemBackupFile', 'no-FHEM-backup-name.tar.gz' ) );
-    my $fhemBackupFile = $fhemBackupFiles[$#fhemBackupFiles];
-
-    my $param = {
-        url => 'https://'
-          . $ncHost
-          . '/remote.php/dav/files/'
-          . $ncUser . '/'
-          . $ncPath . '/'
-          . $fhemBackupFile,
-        timeout  => AttrVal( $name, 'btS_UploadTimeout', 15 ),
-        method   => 'PUT',
-        data     => $cont,
-        hash     => $hash,
-        user     => $ncUser,
-        pwd      => $ncPass,
-        callback => \&FHEM::backupToStorage::ncUploadCb,
-    };
-
-    HttpUtils_NonblockingGet($param);
-    $hash->{helper}->{HttpUtilsParam} = $param;
-
-    return;
-}
-
-sub ncUploadCb {
-    my $param = shift;
-    my $err   = shift;
-    my $data  = shift;
-
-    my $hash = $param->{hash};
-    my $name = $hash->{NAME};
-
-    Log3($name, 1, "backupToStorage ($name) - backup URL: $param->{url}");
-    Log3($name, 1, "backupToStorage ($name) - backup User: $param->{user}");
-    Log3($name, 1, "backupToStorage ($name) - backup Pass: $param->{pwd}");
-
-    Log3(
-        $name, 3,
-        "backupToStorage ($name) - callback: backup Nextcloud upload "
-          . (
-            ( $data or $err )
-            ? 'failed - Error: ' . $err . ' Data: ' . $data
-            : 'succesfully'
-          )
+    Log3( $name, 4,
+        "backupToStorage ($name) - execute command asynchronously (PID=$pid)"
     );
 
-    delete $hash->{helper}->{HttpUtilsParam};
+    $hash->{".fhem"}{subprocess} = $subprocess;
+
+    InternalTimer( gettimeofday() + 1,
+        "FHEM::backupToStorage::PollChild", $hash );
+    Log3( $hash, 4,
+        "backupToStorage ($name) - control passed back to main loop." );
 
     return;
+}
+
+sub PollChild {
+    my $hash = shift;
+
+    my $name = $hash->{NAME};
+
+    if ( defined( $hash->{".fhem"}{subprocess} ) ) {
+        my $subprocess = $hash->{".fhem"}{subprocess};
+        my $json       = $subprocess->readFromChild();
+
+        if ( !defined($json) ) {
+            Log3( $name, 5,
+                    "backupToStorage ($name) - still waiting ("
+                  . $subprocess->{lasterror}
+                  . ")." );
+            InternalTimer( gettimeofday() + 1,
+                "FHEM::backupToStorage::PollChild", $hash );
+            return;
+        }
+        else {
+            Log3( $name, 4,
+"backupToStorage ($name) - got result from asynchronous parsing."
+            );
+            $subprocess->wait();
+            Log3( $name, 4,
+                "backupToStorage ($name) - asynchronous finished." );
+
+            CleanSubprocess($hash);
+            WriteReadings( $hash, $json );
+        }
+    }
+}
+
+######################################
+# Begin Childprozess
+######################################
+sub FileUpload {
+    my $subprocess = shift;
+    my $response   = {};
+
+    if ( $subprocess->{type} eq 'Nextcloud' ) {
+        $response->{ncUpload} = ExecuteNCupload($subprocess);
+    }
+
+    my $json = eval { encode_json($response) };
+    if ($@) {
+        Log3( 'backupToStorage File Upload',
+            1, "backupToStorage - JSON error: $@" );
+        $json = '{"jsonerror":"$@"}';
+    }
+
+    $subprocess->writeToParent($json);
+
+    return;
+}
+
+sub ExecuteNCupload {
+    my $subprocess = shift;
+
+    my $command = 'curl -u ';
+    $command .= $subprocess->{user} . ':' . $subprocess->{pass};
+    $command .= ' -T ' . $subprocess->{backupfile};
+    $command .= ' "https://';
+    $command .= $subprocess->{host};
+    $command .= '/remote.php/dav/files/';
+    $command .= $subprocess->{user};
+    $command .= $subprocess->{path};
+    $command .= '/';
+    $command .= $subprocess->{fileNameAtStorage};
+    $command .= '"';
+    
+    print 'DEBUG!!! - Command: ' . $command . "\n";
+
+    return qx{$command};
+}
+
+######################################
+# End Childprozess
+######################################
+
+sub CleanSubprocess {
+    my $hash = shift;
+
+    my $name = $hash->{NAME};
+
+    delete( $hash->{".fhem"}{subprocess} );
+    Log3( $name, 4, "backupToStorage ($name) - clean Subprocess" );
 }
 
 sub StorePassword {
@@ -365,14 +490,15 @@ sub ReadPassword {
     my $key   = getUniqueId() . $index;
     my ( $password, $err );
 
-    Log3($name, 4, "backupToStorage ($name) - Read password from file");
+    Log3( $name, 4, "backupToStorage ($name) - Read password from file" );
 
     ( $err, $password ) = getKeyValue($index);
 
     if ( defined($err) ) {
 
-        Log3($name, 3,
-          "backupToStorage ($name) - unable to read password from file: $err");
+        Log3( $name, 3,
+            "backupToStorage ($name) - unable to read password from file: $err"
+        );
         return undef;
     }
 
@@ -394,7 +520,7 @@ sub ReadPassword {
         return $dec_pwd;
     }
     else {
-        Log3($name, 3, "backupToStorage ($name) - No password in file");
+        Log3( $name, 3, "backupToStorage ($name) - No password in file" );
         return undef;
     }
 
@@ -432,6 +558,24 @@ sub CheckAttributsForCredentials {
     );
 
     return readingsSingleUpdate( $hash, 'state', $status, 1 );
+}
+
+sub WriteReadings {
+    my $hash = shift;
+    my $json = shift;
+
+    my $name = $hash->{NAME};
+
+    my $decode_json = eval { decode_json($json) };
+    if ($@) {
+        Log3( $name, 2, "backupToStorage ($name) - JSON error: $@" );
+        return;
+    }
+
+    readingsBeginUpdate($hash);
+    readingsBulkUpdate( $hash, 'state',       'ready' );
+    readingsBulkUpdate( $hash, 'uploadState', $decode_json->{ncUpload} );
+    readingsEndUpdate( $hash, 1 );
 }
 
 1;
