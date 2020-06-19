@@ -178,7 +178,7 @@ sub Delete {
     my $name = shift;
 
     HttpUtils_Close( $hash->{helper}->{HttpUtilsParam} )
-      if ( $hash->{helper}->{HttpUtilsParam} );
+      if ( defined($hash->{helper}->{HttpUtilsParam}) );
     DeletePassword($hash);
 
     return;
@@ -188,7 +188,7 @@ sub Shutdown {
     my $hash = shift;
 
     HttpUtils_Close( $hash->{helper}->{HttpUtilsParam} )
-      if ( $hash->{helper}->{HttpUtilsParam} );
+      if ( defined($hash->{helper}->{HttpUtilsParam}) );
 
     return;
 }
