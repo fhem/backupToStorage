@@ -73,7 +73,42 @@ sub backupToStorage_Initialize {
 <a name="backupToStorage"></a>
 <h3>backupToStorage</h3>
 <ul>
-
+    The module offers the possibility to automatically load the created backup files from the backup module onto a storage.<br>
+    <a name="backupToStoragedefine"></a>
+    <br>
+    <b>Define</b>
+    <ul>
+        <code>define &lt;name&gt; backupToStorage</code>
+        <br>
+        Beispiel:
+        <ul>
+            <code>define backupNextcloudUpload backupToStorage</code>
+        </ul>
+        <br>
+    </ul>
+    <a name="backupToStorageattributes"></a>
+    <b>Attributs</b>
+    <ul>
+        <li>bTS_Host - Server name where the storage is located</li>
+        <li>bTS_User - remote user for login</li>
+        <li>bTS_Path - remote path where the upload file should go. e.g. Nextcloud &lt;/FHEM-Backup&gt;</li>
+        <li>bTS_Type - Storage Type, default is Nextcloud</li>
+    </ul>
+    <br>
+    <a name="backupToStorageset"></a>
+    <b>Set</b>
+    <ul>
+        <li>addpassword - puts the storage password in the keyfile / !!! don't use = !!!</li>
+        <li>deletepassword - removes the storage password from the keyfile</li>
+    </ul>
+    <br>
+    <a name="backupToStoragereadings"></a>
+    <b>Readings</b>
+    <ul>
+        <li>state - shows the current status of the module</li>
+        <li>fhemBackupFile - the path of the last backup file is automatically set by the backup module</li>
+        <li>uploadState - Status of the last upload.</li>
+    </ul>
 </ul>
 
 =end html
@@ -83,7 +118,42 @@ sub backupToStorage_Initialize {
 <a name="backupToStorage"></a>
 <h3>backupToStorage</h3>
 <ul>
-
+    Das Modul bietet die M&ouml;glichkeit die erstellten Backupdateien vom Modul backup automatisiert auf ein Storage zu laden.<br>
+    <a name="backupToStoragedefine"></a>
+    <br>
+    <b>Define</b>
+    <ul>
+        <code>define &lt;name&gt; backupToStorage</code>
+        <br>
+        Beispiel:
+        <ul>
+            <code>define backupNextcloudUpload backupToStorage</code>
+        </ul>
+        <br>
+    </ul>
+    <a name="backupToStorageattributes"></a>
+    <b>Attribute</b>
+    <ul>
+        <li>bTS_Host - Servername wo sich das Storage drauf befindet</li>
+        <li>bTS_User - remote User f&uuml;r den Login</li>
+        <li>bTS_Path - remote Path wohin das uploadfile soll. z.B. Nextcloud &lt;/FHEM-Backup&gt;</li>
+        <li>bTS_Type - Storage Type, default ist Nextcloud</li>
+    </ul>
+    <br>
+    <a name="backupToStorageset"></a>
+    <b>Set</b>
+    <ul>
+        <li>addpassword - setzt das Storage Passwort ins Keyfile / !!!Keine = verwenden!!!</li>
+        <li>deletepassword - entfernt das Storage Passwort aus dem Keyfile</li>
+    </ul>
+    <br>
+    <a name="backupToStoragereadings"></a>
+    <b>Readings</b>
+    <ul>
+        <li>state - zeigt den aktuellen Status des Modules an</li>
+        <li>fhemBackupFile - der Pfad des letzten Backupfiles, wird automatisch vom backup Modul gesetzt</li>
+        <li>uploadState - Status des letzten uploads.</li>
+    </ul>
 </ul>
 
 =end html_DE
