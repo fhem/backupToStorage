@@ -54,8 +54,7 @@ sub backupToStorage_Initialize {
         'bTS_Host '
       . 'bTS_User '
       . 'bTS_Path '
-      . 'btS_UploadTimeout '
-      . 'bTSType:Nextcloud';
+      . 'bTS_Type:Nextcloud';
     $hash->{parseParams} = 1;
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
