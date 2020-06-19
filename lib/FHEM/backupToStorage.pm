@@ -157,7 +157,7 @@ sub Define {
     my $name = shift @$aArg;
     $hash->{VERSION}        = version->parse($VERSION)->normal;
     $hash->{NOTIFYDEV}      = 'global,' . $name;
-    $hash->{STORAGETYPE}    = AttrVal( $name, 'bTSType', 'Nextcloud' );
+    $hash->{STORAGETYPE}    = AttrVal( $name, 'bTS_Type', 'Nextcloud' );
 
     Log3( $name, 3, "backupToStorage ($name) - defined" );
 
