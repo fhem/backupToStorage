@@ -122,6 +122,7 @@ BEGIN {
           readingsBeginUpdate
           readingsEndUpdate
           ReadingsVal
+          ReadingsAge
           gettimeofday
           InternalTimer
           defs
