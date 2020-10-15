@@ -204,7 +204,7 @@ sub Notify {
     return if ( !$events );
 
     Log3( $name, 4,
-            "AutoShuttersControl ($name) - Devname: "
+            "backupToStorage ($name) - Devname: "
           . $devname
           . " Name: "
           . $name
