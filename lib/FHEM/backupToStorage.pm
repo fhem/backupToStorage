@@ -320,6 +320,10 @@ sub PushToStorage {
     my $name = $hash->{NAME};
 
     Log3( $name, 4, "backupToStorage ($name) - push to storage function" );
+    
+    return
+      if (ReadingsAge($name,'fhemBackupFile',60) > 5) );
+
 
     require "SubProcess.pm";
     my $subprocess = SubProcess->new( { onRun => \&FileUpload } );
