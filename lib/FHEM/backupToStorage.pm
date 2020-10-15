@@ -322,7 +322,7 @@ sub PushToStorage {
     Log3( $name, 4, "backupToStorage ($name) - push to storage function" );
     
     return
-      if (ReadingsAge($name,'fhemBackupFile',60) > 5) );
+      if ( ReadingsAge($name,'fhemBackupFile',60) > 5 );
 
 
     require "SubProcess.pm";
