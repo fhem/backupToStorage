@@ -34,6 +34,7 @@ package main;
 use strict;
 use warnings;
 use utf8;
+use Meta;
 
 use FHEM::backupToStorage;
 
