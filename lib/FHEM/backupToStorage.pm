@@ -324,6 +324,8 @@ sub PushToStorage {
     
     return
       if ( ReadingsAge($name,'fhemBackupFile',1) > 5 );
+      
+    Log3( $name, 4, "backupToStorage ($name) - after readings age return" );
 
 
     require "SubProcess.pm";
