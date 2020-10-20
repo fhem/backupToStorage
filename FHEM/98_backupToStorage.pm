@@ -55,7 +55,7 @@ sub backupToStorage_Initialize {
         'bTS_Host '
       . 'bTS_User '
       . 'bTS_Path '
-      . 'bTS_Proto:https,http '
+      . 'bTS_Proto:http '
       . 'bTS_Type:Nextcloud';
     $hash->{parseParams} = 1;
 
