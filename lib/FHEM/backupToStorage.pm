@@ -395,8 +395,8 @@ sub PollChild {
         }
         else {
             Log3( $name, 4,
-"backupToStorage ($name) - got result from asynchronous parsing."
-            );
+"backupToStorage ($name) - got result from asynchronous parsing: "
+            . $json );
             $subprocess->wait();
             Log3( $name, 4,
                 "backupToStorage ($name) - asynchronous finished." );
