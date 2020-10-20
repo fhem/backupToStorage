@@ -55,6 +55,7 @@ sub backupToStorage_Initialize {
         'bTS_Host '
       . 'bTS_User '
       . 'bTS_Path '
+      . 'bTS_Proto:https,http '
       . 'bTS_Type:Nextcloud';
     $hash->{parseParams} = 1;
 
@@ -175,7 +176,7 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.0.1",
+  "version": "v1.1.0",
   "author": [
     "Marko Oldenburg <fhemsupport@cooltux.net>"
   ],

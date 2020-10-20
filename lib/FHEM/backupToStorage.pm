@@ -336,15 +336,16 @@ sub PushToStorage {
     my @fileNameAtStorage_array = split( '/', $backupFile );
     my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
 
-    $subprocess->{curl} = qx(which curl);
+    $subprocess->{curl}                 = qx(which curl);
     chomp($subprocess->{curl});
-    $subprocess->{type} = $hash->{STORAGETYPE};
-    $subprocess->{host} = AttrVal( $name, 'bTS_Host', '' );
-    $subprocess->{user} = AttrVal( $name, 'bTS_User', '' );
-    $subprocess->{pass} = ReadPassword( $hash, $name );
-    $subprocess->{path}              = AttrVal( $name, 'bTS_Path', '' );
-    $subprocess->{backupfile}        = $backupFile;
-    $subprocess->{fileNameAtStorage} = $fileNameAtStorage;
+    $subprocess->{type}                 = $hash->{STORAGETYPE};
+    $subprocess->{host}                 = AttrVal( $name, 'bTS_Host', '' );
+    $subprocess->{user}                 = AttrVal( $name, 'bTS_User', '' );
+    $subprocess->{pass}                 = ReadPassword( $hash, $name );
+    $subprocess->{path}                 = AttrVal( $name, 'bTS_Path', '' );
+    $subprocess->{backupfile}           = $backupFile;
+    $subprocess->{fileNameAtStorage}    = $fileNameAtStorage;
+    $subprocess->{proto}                = AttrVal( $name, 'bTS_Proto', 'https' );
 
     my $pid = $subprocess->run();
 
@@ -441,7 +442,7 @@ sub ExecuteNCupload {
     $command .= ' -s -u ';
     $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' -T ' . $subprocess->{backupfile};
-    $command .= ' "https://';
+    $command .= ' "' . $subprocess->{proto} . '://';
     $command .= $subprocess->{host};
     $command .= '/remote.php/dav/files/';
     $command .= $subprocess->{user};
