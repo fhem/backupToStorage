@@ -416,6 +416,10 @@ sub FileUpload {
 
     if ( $subprocess->{type} eq 'Nextcloud' ) {
         my ($returnString,$returnCode) = ExecuteNCupload($subprocess);
+        
+        Log3( $name, 5,
+                "backupToStorage ($name) - FileUpload Nextcloud, returnCode: $returnCode
+                , returnString: $returnString" );
 
         $response->{ncUpload} = ( $returnCode == 72057594037927935
           && $returnString eq ''
