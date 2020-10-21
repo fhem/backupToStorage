@@ -421,7 +421,7 @@ sub FileUpload {
         print 'backupToStorage File Upload - FileUpload Nextcloud, returnCode: '
             . $returnCode
             . ' , returnString: '
-            . $returnString' . "\n"
+            . $returnString . "\n"
           if ( $subprocess->{loglevel} > 4 );
 
         $response->{ncUpload} = ( $returnCode == 72057594037927935
