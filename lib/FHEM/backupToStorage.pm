@@ -346,6 +346,7 @@ sub PushToStorage {
     $subprocess->{backupfile}           = $backupFile;
     $subprocess->{fileNameAtStorage}    = $fileNameAtStorage;
     $subprocess->{proto}                = AttrVal( $name, 'bTS_Proto', 'https' );
+    $subprocess->{loglevel}             = AttrVal( $name, 'verbose', 3 );
 
     my $pid = $subprocess->run();
 
@@ -417,9 +418,11 @@ sub FileUpload {
     if ( $subprocess->{type} eq 'Nextcloud' ) {
         my ($returnString,$returnCode) = ExecuteNCupload($subprocess);
         
-        Log3( 'backupToStorage File Upload', 5,
-                "backupToStorage - FileUpload Nextcloud, returnCode: $returnCode
-                , returnString: $returnString" );
+        print 'backupToStorage File Upload - FileUpload Nextcloud, returnCode: '
+            . $returnCode
+            . ' , returnString: '
+            . $returnString' . "\n"
+          if ( $subprocess->{loglevel} > 4 );
 
         $response->{ncUpload} = ( $returnCode == 72057594037927935
           && $returnString eq ''
@@ -429,8 +432,8 @@ sub FileUpload {
 
     my $json = eval { encode_json($response) };
     if ($@) {
-        Log3( 'backupToStorage File Upload',
-            1, "backupToStorage - JSON error: $@" );
+        print 'backupToStorage File Upload backupToStorage - JSON error: $@'
+            . "\n";
         $json = '{"jsonerror":"$@"}';
     }
 
