@@ -294,6 +294,16 @@ sub Set {
 
         DeletePassword($hash);
     }
+    elsif ( lc $cmd eq 'active' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+    
+        readingsSingleUpdate( $hash, 'state', $cmd, 1 );
+    }
+    elsif ( lc $cmd eq 'inactive' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        
+        readingsSingleUpdate( $hash, 'state', $cmd, 1 );
+    }
     else {
         my $list    = 'active:noArg inactive:noArg';
         $list       .= (
