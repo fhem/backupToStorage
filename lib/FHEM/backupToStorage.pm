@@ -295,11 +295,11 @@ sub Set {
         DeletePassword($hash);
     }
     else {
-        my $list    = 'active,inactive';
+        my $list    = 'active:noArg inactive:noArg';
         $list       .= (
                       defined( ReadPassword( $hash, $name ) )
-                        ? 'deletepassword:noArg'
-                        : 'addpassword'
+                        ? ' deletepassword:noArg'
+                        : ' addpassword'
                       );
 
         return 'Unknown argument ' . $cmd . ', choose one of ' . $list;
