@@ -202,7 +202,10 @@ sub Notify {
     my $devname = $dev->{NAME};
     my $devtype = $dev->{TYPE};
     my $events  = deviceEvents( $dev, 1 );
-    return if ( !$events );
+    
+    return if (    !$events
+                || IsDisabled($name) );
+
 
     Log3( $name, 4,
             "backupToStorage ($name) - Devname: "
@@ -291,11 +294,12 @@ sub Set {
         DeletePassword($hash);
     }
     else {
-        my $list = (
-            defined( ReadPassword( $hash, $name ) )
-            ? 'deletepassword:noArg'
-            : 'addpassword'
-        );
+        my $list    = 'active,inactive';
+        $list       .= (
+                      defined( ReadPassword( $hash, $name ) )
+                        ? 'deletepassword:noArg'
+                        : 'addpassword'
+                      );
 
         return 'Unknown argument ' . $cmd . ', choose one of ' . $list;
     }
