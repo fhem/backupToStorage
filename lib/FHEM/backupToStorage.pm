@@ -127,6 +127,7 @@ BEGIN {
           InternalTimer
           defs
           modules
+          IsDisabled
           setKeyValue
           getKeyValue
           getUniqueId
