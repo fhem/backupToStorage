@@ -34,7 +34,7 @@ package main;
 use strict;
 use warnings;
 use utf8;
-use Meta;
+use FHEM::Meta;
 
 use FHEM::backupToStorage;
 
@@ -47,6 +47,7 @@ sub backupToStorage_Initialize {
     $hash->{DefFn}      = \&FHEM::backupToStorage::Define;
     $hash->{NotifyFn}   = \&FHEM::backupToStorage::Notify;
     $hash->{UndefFn}    = \&FHEM::backupToStorage::Undef;
+    $hash->{AttrFn}     = \&FHEM::backupToStorage::Attr;
     $hash->{RenameFn}   = \&FHEM::backupToStorage::Rename;
     $hash->{DeleteFn}   = \&FHEM::backupToStorage::Delete;
     $hash->{ShutdownFn} = \&FHEM::backupToStorage::Shutdown;
@@ -178,7 +179,7 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.1.0",
+  "version": "v1.2.0",
   "author": [
     "Marko Oldenburg <fhemsupport@cooltux.net>"
   ],

@@ -318,6 +318,19 @@ sub Set {
     return;
 }
 
+sub Attr {
+    my $cmd         = shift;
+    my $name        = shift;
+
+    my $attrName    = shift;
+    my $attrVal     = shift;
+
+    if ( $cmd eq 'set' ) {
+    
+    
+    }
+}
+
 sub Rename {
     my $new = shift;
     my $old = shift;
@@ -438,11 +451,21 @@ sub FileUpload {
             . ' , returnString: '
             . $returnString . "\n"
           if ( $subprocess->{loglevel} > 4 );
-
-        $response->{ncUpload} = ( $returnCode == 72057594037927935
-          && $returnString eq ''
-            ? 'upload successfully'
-            : $returnString );
+        
+        
+        if (  $returnString =~ /100\s[0-9].*\s100\s[0-9].*/m
+          and $returnString =~ /\s\s<o:hint xmlns:o="o:">(.*)<\/o:hint>/m ) {
+            $response->{ncUpload} = $1;
+        }
+        elsif ( $returnString =~ /100\s[0-9].*\s100\s[0-9].*/m ) {
+            $response->{ncUpload} = 'upload successfully';
+        }
+        elsif ( $returnString =~ /(curl:\s.*)/ ){
+            $response->{ncUpload} = $1;
+        }
+        else {
+            $response->{ncUpload} = 'unknown error';
+        }
     }
 
     my $json = eval { encode_json($response) };
@@ -461,7 +484,7 @@ sub ExecuteNCupload {
     my $subprocess = shift;
 
     my $command = $subprocess->{curl};
-    $command .= ' -s -u ';
+    $command .= ' -u ';
     $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' -T ' . $subprocess->{backupfile};
     $command .= ' "' . $subprocess->{proto} . '://';
