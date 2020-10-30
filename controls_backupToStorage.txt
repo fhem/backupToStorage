@@ -1,2 +1,2 @@
 UPD 2020-10-28_19:14:19 6242 FHEM/98_backupToStorage.pm
-UPD 2020-10-28_19:13:53 17356 lib/FHEM/backupToStorage.pm
+UPD 2020-10-30_15:17:14 18433 lib/FHEM/backupToStorage.pm

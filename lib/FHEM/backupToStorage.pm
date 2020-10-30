@@ -204,6 +204,7 @@ sub Notify {
     my $devtype = $dev->{TYPE};
     my $events  = deviceEvents( $dev, 1 );
     
+    _CheckIsDisabledAfterSetAttr($hash);
     return if (    !$events
                 || IsDisabled($name) );
 
@@ -322,13 +323,41 @@ sub Attr {
     my $cmd         = shift;
     my $name        = shift;
 
+    my $hash        = $defs{$name};
     my $attrName    = shift;
     my $attrVal     = shift;
 
-    if ( $cmd eq 'set' ) {
-    
-    
+
+    if ( $attrName eq 'disable'
+      || $attrName eq 'disabledForIntervals' ) {
+      
+        if ( $cmd eq 'set' ) {
+            if ( $attrName eq 'disabledForIntervals' ) {
+                return
+    'check disabledForIntervals Syntax HH:MM-HH:MM or HH:MM-HH:MM HH:MM-HH:MM ...'
+                if ( $attrVal !~ /^((\d{2}:\d{2})-(\d{2}:\d{2})\s?)+$/ );
+                Log3( $name, 3, "backupToStorage ($name) - disabledForIntervals" );
+            }
+            elsif ( $attrName eq 'disable' ) {
+                Log3( $name, 3, "backupToStorage ($name) - disabled" );
+            }
+        }
+
+        InternalTimer( gettimeofday() + 1,
+            'FHEM::backupToStorage::_CheckIsDisabledAfterSetAttr', $hash, 0 );
     }
+}
+
+sub _CheckIsDisabledAfterSetAttr {
+    my $hash    = shift;
+
+    my $name    = $hash->{NAME};
+    my $state   = ( IsDisabled($name)
+                    ? 'disabled'
+                    : 'ready' );
+
+    readingsSingleUpdate($hash, 'state', $state, 1)
+      if ( ReadingsVal($name, 'state', 'ready' ) ne $state );
 }
 
 sub Rename {
