@@ -513,7 +513,7 @@ sub ExecuteNCupload {
     my $subprocess = shift;
 
     my $command = $subprocess->{curl};
-    $command .= ' -u ';
+    $command .= ' -k -u ';
     $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' -T ' . $subprocess->{backupfile};
     $command .= ' "' . $subprocess->{proto} . '://';
