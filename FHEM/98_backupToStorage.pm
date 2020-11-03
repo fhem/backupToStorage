@@ -179,7 +179,7 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.2.0",
+  "version": "v1.2.1",
   "author": [
     "Marko Oldenburg <fhemsupport@cooltux.net>"
   ],
