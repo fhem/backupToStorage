@@ -204,7 +204,20 @@ sub Notify {
     my $devtype = $dev->{TYPE};
     my $events  = deviceEvents( $dev, 1 );
     
-    _CheckIsDisabledAfterSetAttr($hash);
+    _CheckIsDisabledAfterSetAttr($hash)
+        if ( (
+                (
+                    grep m{^DELETEATTR.$name.(disable|disabledForIntervals)$}xms,
+                    @{$events}
+                    or grep m{^ATTR.$name.(disable|disabledForIntervals).\S+$}xms,
+                    @{$events}
+                )
+                && $devname eq 'global'
+                && $init_done
+            )
+            || $devname eq $name
+        );
+
     return if (    !$events
                 || IsDisabled($name) );
 
@@ -355,6 +368,8 @@ sub _CheckIsDisabledAfterSetAttr {
     my $state   = ( IsDisabled($name)
                     ? 'disabled'
                     : 'ready' );
+                    
+    Log3( $name, 3, "backupToStorage ($name) - _CheckIsDisabledAfterSetAttr" );
 
     readingsSingleUpdate($hash, 'state', $state, 1)
       if ( ReadingsVal($name, 'state', 'ready' ) ne $state );
