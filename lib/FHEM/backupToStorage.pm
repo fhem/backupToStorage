@@ -497,11 +497,11 @@ sub FileUpload {
           if ( $subprocess->{loglevel} > 4 );
         
         
-        if (  $returnString =~ /100\s[0-9].*\s100\s[0-9].*/m
+        if (  $returnString =~ /100\s\s?[0-9].*\s100\s\s?[0-9].*/m
           and $returnString =~ /\s\s<o:hint xmlns:o="o:">(.*)<\/o:hint>/m ) {
             $response->{ncUpload} = $1;
         }
-        elsif ( $returnString =~ /100\s[0-9].*\s100\s[0-9].*/m ) {
+        elsif ( $returnString =~ /100\s\s?[0-9].*\s100\s\s?[0-9].*/m ) {
             $response->{ncUpload} = 'upload successfully';
         }
         elsif ( $returnString =~ /(curl:\s.*)/ ){
