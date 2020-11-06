@@ -395,7 +395,7 @@ sub PushToStorage {
     Log3( $name, 4, "backupToStorage ($name) - push to storage function" );
     
     return
-      if ( ReadingsAge($name,'fhemBackupFile',1) > 60 );
+      if ( ReadingsAge($name,'fhemBackupFile',1) > 180 );
       
     Log3( $name, 4, "backupToStorage ($name) - after readings age return" );
 
