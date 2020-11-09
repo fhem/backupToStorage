@@ -150,10 +150,10 @@ sub Define {
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
     use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
 
-    return 'only one backupToStorage instance allowed'
+    return qq{only one backupToStorage instance allowed}
       if ( devspec2array('TYPE=backupToStorage') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
-    return 'too few parameters: define <name> backupToStorage'
+    return qq{too few parameters: define <name> backupToStorage}
       if ( scalar( @{$aArg} ) != 2 );
 
     my $name = shift @$aArg;
@@ -161,7 +161,7 @@ sub Define {
     $hash->{NOTIFYDEV}      = 'global,' . $name;
     $hash->{STORAGETYPE}    = AttrVal( $name, 'bTS_Type', 'Nextcloud' );
 
-    Log3( $name, 3, "backupToStorage ($name) - defined" );
+    Log3( $name, 3, qq{backupToStorage ("$name") - defined} );
 
     return;
 }
@@ -170,7 +170,7 @@ sub Undef {
     my $hash = shift;
     my $name = shift;
 
-    Log3( $name, 3, "backupToStorage ($name) - delete device $name" );
+    Log3( $name, 3, qq{backupToStorage ("$name") - delete device $name} );
 
     return;
 }
@@ -223,12 +223,12 @@ sub Notify {
 
 
     Log3( $name, 4,
-            "backupToStorage ($name) - Devname: "
-          . $devname
-          . " Name: "
-          . $name
-          . " Notify: "
-          . Dumper $events);    # mit Dumper
+            qq{backupToStorage ("$name") - Devname:
+          " $devname "
+          Name:
+          " $name "
+          Notify:
+          Dumper $events});    # mit Dumper
 
     PushToStorage($hash)
       if ( ( grep m{^backup.done(.+)?$}xms, @{$events} )
@@ -294,27 +294,27 @@ sub Set {
 
     my $name = shift @$aArg;
     my $cmd  = shift @$aArg
-      // return qq{"set $name" needs at least one argument};
+      // return qq{set "$name" needs at least one argument};
 
     if ( lc $cmd eq 'addpassword' ) {
-        return "please set Attribut bTS_User first"
+        return qq{please set Attribut bTS_User first}
           if ( AttrVal( $name, 'bTS_User', 'none' ) eq 'none' );
-        return "usage: $cmd <password>" if ( scalar( @{$aArg} ) != 1 );
+        return qq{usage: "$cmd" <password>} if ( scalar( @{$aArg} ) != 1 );
 
         StorePassword( $hash, $name, $aArg->[0] );
     }
     elsif ( lc $cmd eq 'deletepassword' ) {
-        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
 
         DeletePassword($hash);
     }
     elsif ( lc $cmd eq 'active' ) {
-        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
     
         readingsSingleUpdate( $hash, 'state', 'ready', 1 );
     }
     elsif ( lc $cmd eq 'inactive' ) {
-        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
         
         readingsSingleUpdate( $hash, 'state', $cmd, 1 );
     }
@@ -326,7 +326,7 @@ sub Set {
                         : ' addpassword'
                       );
 
-        return 'Unknown argument ' . $cmd . ', choose one of ' . $list;
+        return qq{Unknown argument "$cmd", choose one of $list};
     }
 
     return;
@@ -349,10 +349,10 @@ sub Attr {
                 return
     'check disabledForIntervals Syntax HH:MM-HH:MM or HH:MM-HH:MM HH:MM-HH:MM ...'
                 if ( $attrVal !~ /^((\d{2}:\d{2})-(\d{2}:\d{2})\s?)+$/ );
-                Log3( $name, 3, "backupToStorage ($name) - disabledForIntervals" );
+                Log3( $name, 3, qq{backupToStorage ("$name") - disabledForIntervals} );
             }
             elsif ( $attrName eq 'disable' ) {
-                Log3( $name, 3, "backupToStorage ($name) - disabled" );
+                Log3( $name, 3, qq{backupToStorage ("$name") - disabled} );
             }
         }
 
@@ -369,7 +369,7 @@ sub _CheckIsDisabledAfterSetAttr {
                     ? 'disabled'
                     : 'ready' );
                     
-    Log3( $name, 3, "backupToStorage ($name) - _CheckIsDisabledAfterSetAttr" );
+    Log3( $name, 3, qq{backupToStorage ("$name") - _CheckIsDisabledAfterSetAttr} );
 
     readingsSingleUpdate($hash, 'state', $state, 1)
       if ( ReadingsVal($name, 'state', 'ready' ) ne $state );
@@ -392,12 +392,12 @@ sub PushToStorage {
 
     my $name = $hash->{NAME};
 
-    Log3( $name, 4, "backupToStorage ($name) - push to storage function" );
+    Log3( $name, 4, qq{backupToStorage ("$name") - push to storage function} );
     
     return
       if ( ReadingsAge($name,'fhemBackupFile',1) > 180 );
       
-    Log3( $name, 4, "backupToStorage ($name) - after readings age return" );
+    Log3( $name, 4, qq{backupToStorage ("$name") - after readings age return} );
 
 
     require "SubProcess.pm";
@@ -426,7 +426,7 @@ sub PushToStorage {
 
     if ( !defined($pid) ) {
         Log3( $name, 1,
-            "backupToStorage ($name) - Cannot execute command asynchronously" );
+            qq{backupToStorage ("$name") - Cannot execute command asynchronously} );
 
         CleanSubprocess($hash);
         readingsSingleUpdate( $hash, 'state',
@@ -435,7 +435,7 @@ sub PushToStorage {
     }
 
     Log3( $name, 4,
-        "backupToStorage ($name) - execute command asynchronously (PID=$pid)"
+        qq{backupToStorage ("$name") - execute command asynchronously (PID="$pid")}
     );
 
     $hash->{".fhem"}{subprocess} = $subprocess;
@@ -443,7 +443,7 @@ sub PushToStorage {
     InternalTimer( gettimeofday() + 1,
         "FHEM::backupToStorage::PollChild", $hash );
     Log3( $hash, 4,
-        "backupToStorage ($name) - control passed back to main loop." );
+        qq{backupToStorage ("$name") - control passed back to main loop.} );
 
     return;
 }
@@ -459,20 +459,20 @@ sub PollChild {
 
         if ( !defined($json) ) {
             Log3( $name, 5,
-                    "backupToStorage ($name) - still waiting ("
-                  . $subprocess->{lasterror}
-                  . ")." );
+                    qq{backupToStorage ($name) - still waiting (
+                  " $subprocess->{lasterror} "
+                  ).} );
             InternalTimer( gettimeofday() + 1,
                 "FHEM::backupToStorage::PollChild", $hash );
             return;
         }
         else {
             Log3( $name, 4,
-"backupToStorage ($name) - got result from asynchronous parsing: "
-            . $json );
+qq{backupToStorage ("$name") - got result from asynchronous parsing: "
+            . $json} );
             $subprocess->wait();
             Log3( $name, 4,
-                "backupToStorage ($name) - asynchronous finished." );
+                qq{backupToStorage ("$name") - asynchronous finished.} );
 
             CleanSubprocess($hash);
             WriteReadings( $hash, $json );
@@ -558,7 +558,7 @@ sub CleanSubprocess {
     my $name = $hash->{NAME};
 
     delete( $hash->{".fhem"}{subprocess} );
-    Log3( $name, 4, "backupToStorage ($name) - clean Subprocess" );
+    Log3( $name, 4, qq{backupToStorage ("$name") - clean Subprocess} );
 }
 
 sub StorePassword {
@@ -586,9 +586,9 @@ sub StorePassword {
     my $err = setKeyValue( $index, $enc_pwd );
     DoTrigger( $name, 'password add' );
 
-    return "error while saving the password - $err" if ( defined($err) );
+    return qq{error while saving the password - $err} if ( defined($err) );
 
-    return "password successfully saved";
+    return qq{password successfully saved};
 }
 
 sub ReadPassword {
@@ -599,14 +599,14 @@ sub ReadPassword {
     my $key   = getUniqueId() . $index;
     my ( $password, $err );
 
-    Log3( $name, 4, "backupToStorage ($name) - Read password from file" );
+    Log3( $name, 4, qq{backupToStorage ("$name") - Read password from file} );
 
     ( $err, $password ) = getKeyValue($index);
 
     if ( defined($err) ) {
 
         Log3( $name, 3,
-            "backupToStorage ($name) - unable to read password from file: $err"
+            qq{backupToStorage ("$name") - unable to read password from file: $err}
         );
         return undef;
     }
@@ -629,7 +629,7 @@ sub ReadPassword {
         return $dec_pwd;
     }
     else {
-        Log3( $name, 3, "backupToStorage ($name) - No password in file" );
+        Log3( $name, 3, qq{backupToStorage ("$name") - No password in file} );
         return undef;
     }
 
@@ -680,7 +680,7 @@ sub WriteReadings {
 
     my $decode_json = eval { decode_json($json) };
     if ($@) {
-        Log3( $name, 2, "backupToStorage ($name) - JSON error: $@" );
+        Log3( $name, 2, qq{backupToStorage ("$name") - JSON error: $@} );
         return;
     }
 
