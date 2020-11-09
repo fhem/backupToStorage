@@ -226,7 +226,7 @@ sub Notify {
             qq{backupToStorage ($name) -
           Devname: $devname 
           Name: $name
-          Notify: "Dumper $events"}
+          Notify: } . Dumper $events
     );    # mit Dumper
 
     PushToStorage($hash)
