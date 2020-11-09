@@ -226,7 +226,7 @@ sub Notify {
             qq{backupToStorage ($name) -
           Devname: $devname 
           Name: $name
-          Notify:Dumper $events}
+          Notify: "Dumper $events"}
     );    # mit Dumper
 
     PushToStorage($hash)
@@ -458,7 +458,7 @@ sub PollChild {
 
         if ( !defined($json) ) {
             Log3( $name, 5,
-                    qq{backupToStorage ($name) - still waiting ($subprocess->{lasterror} ").}
+                    qq{backupToStorage ($name) - still waiting ($subprocess->{lasterror}).}
             );
 
             InternalTimer( gettimeofday() + 1,
