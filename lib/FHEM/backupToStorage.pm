@@ -358,6 +358,12 @@ sub Attr {
         InternalTimer( gettimeofday() + 1,
             'FHEM::backupToStorage::_CheckIsDisabledAfterSetAttr', $hash, 0 );
     }
+    elsif ( $attrName eq 'bTS_Type' ) {
+        InternalTimer( gettimeofday() + 1,
+            sub { $hash->{STORAGETYPE} = AttrVal($name,'bTS_Type','Nextcloud'); }, $hash, 0 );
+    }
+
+    return;
 }
 
 sub _CheckIsDisabledAfterSetAttr {
@@ -399,48 +405,55 @@ sub PushToStorage {
     Log3( $name, 4, qq{backupToStorage ($name) - after readings age return} );
 
 
-    require "SubProcess.pm";
-    my $subprocess = SubProcess->new( { onRun => \&FileUpload } );
+    if ( $hash->{STORAGETYPE} eq 'SynologyFileStation' ) {
+    
+    
+    }
+    else {
+        require "SubProcess.pm";
+        my $subprocess = SubProcess->new( { onRun => \&FileUpload } );
 
-    my $backupFile = ReadingsVal( $name, 'fhemBackupFile', 'none' );
+        my $backupFile = ReadingsVal( $name, 'fhemBackupFile', 'none' );
 
-    my @fileNameAtStorage_array = split( '/', $backupFile );
-    my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
+        my @fileNameAtStorage_array = split( '/', $backupFile );
+        my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
 
-    $subprocess->{curl}                 = qx(which curl);
-    chomp($subprocess->{curl});
-    $subprocess->{type}                 = $hash->{STORAGETYPE};
-    $subprocess->{host}                 = AttrVal( $name, 'bTS_Host', '' );
-    $subprocess->{user}                 = AttrVal( $name, 'bTS_User', '' );
-    $subprocess->{pass}                 = ReadPassword( $hash, $name );
-    $subprocess->{path}                 = AttrVal( $name, 'bTS_Path', '' );
-    $subprocess->{backupfile}           = $backupFile;
-    $subprocess->{fileNameAtStorage}    = $fileNameAtStorage;
-    $subprocess->{proto}                = AttrVal( $name, 'bTS_Proto', 'https' );
-    $subprocess->{loglevel}             = AttrVal( $name, 'verbose', 3 );
+        $subprocess->{curl}                 = qx(which curl);
+        chomp($subprocess->{curl});
+        $subprocess->{type}                 = $hash->{STORAGETYPE};
+        $subprocess->{host}                 = AttrVal( $name, 'bTS_Host', '' );
+        $subprocess->{user}                 = AttrVal( $name, 'bTS_User', '' );
+        $subprocess->{pass}                 = ReadPassword( $hash, $name );
+        $subprocess->{path}                 = AttrVal( $name, 'bTS_Path', '' );
+        $subprocess->{backupfile}           = $backupFile;
+        $subprocess->{fileNameAtStorage}    = $fileNameAtStorage;
+        $subprocess->{proto}                = AttrVal( $name, 'bTS_Proto', 'https' );
+        $subprocess->{loglevel}             = AttrVal( $name, 'verbose', 3 );
 
-    my $pid = $subprocess->run();
+        my $pid = $subprocess->run();
 
-    readingsSingleUpdate( $hash, 'state', ' file upload in progress', 1 );
+        readingsSingleUpdate( $hash, 'state', ' file upload in progress', 1 );
 
-    if ( !defined($pid) ) {
-        Log3( $name, 1,
-            qq{backupToStorage ($name) - Cannot execute command asynchronously} );
+        if ( !defined($pid) ) {
+            Log3( $name, 1,
+                qq{backupToStorage ($name) - Cannot execute command asynchronously} );
 
-        CleanSubprocess($hash);
-        readingsSingleUpdate( $hash, 'state',
-            'Cannot execute command asynchronously', 1 );
-        return undef;
+            CleanSubprocess($hash);
+            readingsSingleUpdate( $hash, 'state',
+                'Cannot execute command asynchronously', 1 );
+            return undef;
+        }
+
+        Log3( $name, 4,
+            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid")}
+        );
+
+        $hash->{".fhem"}{subprocess} = $subprocess;
+
+        InternalTimer( gettimeofday() + 1,
+            "FHEM::backupToStorage::PollChild", $hash );
     }
 
-    Log3( $name, 4,
-        qq{backupToStorage ($name) - execute command asynchronously (PID="$pid")}
-    );
-
-    $hash->{".fhem"}{subprocess} = $subprocess;
-
-    InternalTimer( gettimeofday() + 1,
-        "FHEM::backupToStorage::PollChild", $hash );
     Log3( $hash, 4,
         qq{backupToStorage ($name) - control passed back to main loop.} );
 

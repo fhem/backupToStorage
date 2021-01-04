@@ -57,7 +57,7 @@ sub backupToStorage_Initialize {
       . 'bTS_User '
       . 'bTS_Path '
       . 'bTS_Proto:http '
-      . 'bTS_Type:Nextcloud '
+      . 'bTS_Type:Nextcloud,SynologyFileStation '
       . 'disable:1 '
       . 'disabledForIntervals';
     $hash->{parseParams} = 1;
