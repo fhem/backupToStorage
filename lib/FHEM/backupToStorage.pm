@@ -371,7 +371,7 @@ sub _CheckIsDisabledAfterSetAttr {
 
     my $name    = $hash->{NAME};
     my $state   = ( IsDisabled($name)
-                    ? 'disabled'
+                    ? 'inactive'
                     : 'ready' );
                     
     Log3( $name, 3, qq{backupToStorage ($name) - _CheckIsDisabledAfterSetAttr} );
