@@ -58,6 +58,7 @@ sub backupToStorage_Initialize {
       . 'bTS_Path '
       . 'bTS_Proto:http '
       . 'bTS_Type:Nextcloud,SynologyFileStation '
+      . 'bTS_KeepLastBackups:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 '
       . 'disable:1 '
       . 'disabledForIntervals';
     $hash->{parseParams} = 1;
@@ -143,6 +144,7 @@ sub backupToStorage_Initialize {
         <li>bTS_User - remote User f&uuml;r den Login</li>
         <li>bTS_Path - remote Path wohin das uploadfile soll. z.B. Nextcloud &lt;/FHEM-Backup&gt;</li>
         <li>bTS_Type - Storage Type, default ist Nextcloud</li>
+        <li>bTS_Type - Storage Type, default ist Nextcloud</li>
     </ul>
     <br>
     <a name="backupToStorageset"></a>
@@ -179,7 +181,7 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.2.3",
+  "version": "v1.3.1",
   "author": [
     "Marko Oldenburg <fhemsupport@cooltux.net>"
   ],
