@@ -150,10 +150,10 @@ sub Define {
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
     use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
 
-    return qq{only one backupToStorage instance allowed}
+    return q{only one backupToStorage instance allowed}
       if ( devspec2array('TYPE=backupToStorage') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
-    return qq{too few parameters: define <name> backupToStorage}
+    return q{too few parameters: define <name> backupToStorage}
       if ( scalar( @{$aArg} ) != 2 );
 
     my $name = shift @$aArg;
@@ -170,7 +170,7 @@ sub Undef {
     my $hash = shift;
     my $name = shift;
 
-    Log3( $name, 3, qq{backupToStorage ($name) - delete device $name} );
+    Log3( $name, 3, q{qbackupToStorage ($name) - delete device $name} );
 
     return;
 }
@@ -296,24 +296,28 @@ sub Set {
       // return qq{set "$name" needs at least one argument};
 
     if ( lc $cmd eq 'addpassword' ) {
-        return qq{please set Attribut bTS_User first}
+        return q{please set Attribut bTS_User first}
           if ( AttrVal( $name, 'bTS_User', 'none' ) eq 'none' );
-        return qq{usage: "$cmd" <password>} if ( scalar( @{$aArg} ) != 1 );
+        return qq{usage: "$cmd" <password>}
+          if ( scalar( @{$aArg} ) != 1 );
 
         StorePassword( $hash, $name, $aArg->[0] );
     }
     elsif ( lc $cmd eq 'deletepassword' ) {
-        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd}
+          if ( scalar( @{$aArg} ) != 0 );
 
         DeletePassword($hash);
     }
     elsif ( lc $cmd eq 'active' ) {
-        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd}
+          if ( scalar( @{$aArg} ) != 0 );
     
         readingsSingleUpdate( $hash, 'state', 'ready', 1 );
     }
     elsif ( lc $cmd eq 'inactive' ) {
-        return qq{usage: $cmd} if ( scalar( @{$aArg} ) != 0 );
+        return qq{usage: $cmd}
+          if ( scalar( @{$aArg} ) != 0 );
         
         readingsSingleUpdate( $hash, 'state', $cmd, 1 );
     }
@@ -399,8 +403,8 @@ sub PushToStorage {
 
     Log3( $name, 4, qq{backupToStorage ($name) - push to storage function} );
     
-    return
-      if ( ReadingsAge($name,'fhemBackupFile',1) > 180 );
+    return Log3( $name, 4, qq{backupToStorage ($name) - fhemBackupFile Reading to old} )
+      if ( ReadingsAge($name,'fhemBackupFile',1) > 3600 );
       
     Log3( $name, 4, qq{backupToStorage ($name) - after readings age return} );
 
@@ -445,7 +449,70 @@ sub PushToStorage {
         }
 
         Log3( $name, 4,
-            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid")}
+            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid"})
+        );
+
+        $hash->{".fhem"}{subprocess} = $subprocess;
+
+        InternalTimer( gettimeofday() + 1,
+            "FHEM::backupToStorage::PollChild", $hash );
+    }
+
+    Log3( $hash, 4,
+        qq{backupToStorage ($name) - control passed back to main loop.} );
+
+    return;
+}
+
+sub KeepLastN {
+    my $hash = shift;
+
+    my $name = $hash->{NAME};
+
+    Log3( $name, 4, qq{backupToStorage ($name) - Keep Last N at Storage function} );
+
+
+    if ( $hash->{STORAGETYPE} eq 'SynologyFileStation' ) {
+    
+    
+    }
+    else {
+        require "SubProcess.pm";
+        my $subprocess = SubProcess->new( { onRun => \&CleanUp } );
+
+        my $backupFile = ReadingsVal( $name, 'fhemBackupFile', 'none' );
+
+        my @fileNameAtStorage_array = split( '/', $backupFile );
+        my $fileNameAtStorage = $fileNameAtStorage_array[$#fileNameAtStorage_array];
+
+        $subprocess->{curl}                 = qx(which curl);
+        chomp($subprocess->{curl});
+        $subprocess->{type}                 = $hash->{STORAGETYPE};
+        $subprocess->{host}                 = AttrVal( $name, 'bTS_Host', '' );
+        $subprocess->{user}                 = AttrVal( $name, 'bTS_User', '' );
+        $subprocess->{pass}                 = ReadPassword( $hash, $name );
+        $subprocess->{path}                 = AttrVal( $name, 'bTS_Path', '' );
+        $subprocess->{fileNameAtStorage}    = $fileNameAtStorage;
+        $subprocess->{proto}                = AttrVal( $name, 'bTS_Proto', 'https' );
+        $subprocess->{loglevel}             = AttrVal( $name, 'verbose', 3 );
+        $subprocess->{keeplastn}            = AttrVal( $name, 'bTS_KeepLastBackups', 5 );
+
+        my $pid = $subprocess->run();
+
+        readingsSingleUpdate( $hash, 'state', ' clean up pass last N in progress', 1 );
+
+        if ( !defined($pid) ) {
+            Log3( $name, 1,
+                qq{backupToStorage ($name) - Cannot execute command asynchronously} );
+
+            CleanSubprocess($hash);
+            readingsSingleUpdate( $hash, 'state',
+                'Cannot execute command asynchronously', 1 );
+            return undef;
+        }
+
+        Log3( $name, 4,
+            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid"})
         );
 
         $hash->{".fhem"}{subprocess} = $subprocess;
@@ -540,9 +607,84 @@ sub ExecuteNCupload {
     my $subprocess = shift;
 
     my $command = $subprocess->{curl};
-    $command .= ' -k -u ';
+    $command .= ' -k -X PUT -u ';
     $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' -T ' . $subprocess->{backupfile};
+    $command .= ' "' . $subprocess->{proto} . '://';
+    $command .= $subprocess->{host};
+    $command .= '/remote.php/dav/files/';
+    $command .= $subprocess->{user};
+    $command .= $subprocess->{path};
+    $command .= '/';
+    $command .= $subprocess->{fileNameAtStorage};
+    $command .= '"';
+
+    return ExecuteCommand($command);
+}
+
+sub CleanUp {
+    my $subprocess = shift;
+    my $response   = {};
+
+    if ( $subprocess->{type} eq 'Nextcloud' ) {
+        my ($returnString,$returnCode) = ExecuteCleanUp($subprocess);
+        
+        print 'backupToStorage File Upload - FileUpload Nextcloud, returnCode: '
+            . $returnCode
+            . ' , returnString: '
+            . $returnString . "\n"
+          if ( $subprocess->{loglevel} > 4 );
+        
+        
+        if (  $returnString =~ /100\s\s?[0-9].*\s100\s\s?[0-9].*/m
+          and $returnString =~ /\s\s<o:hint xmlns:o="o:">(.*)<\/o:hint>/m ) {
+            $response->{ncUpload} = $1;
+        }
+        elsif ( $returnString =~ /100\s\s?[0-9].*\s100\s\s?[0-9].*/m ) {
+            $response->{ncUpload} = 'upload successfully';
+        }
+        elsif ( $returnString =~ /(curl:\s.*)/ ){
+            $response->{ncUpload} = $1;
+        }
+        else {
+            $response->{ncUpload} = 'unknown error';
+        }
+    }
+
+    my $json = eval { encode_json($response) };
+    if ($@) {
+        print 'backupToStorage File Upload backupToStorage - JSON error: $@'
+            . "\n";
+        $json = '{"jsonerror":"$@"}';
+    }
+
+    $subprocess->writeToParent($json);
+
+    return;
+}
+
+sub ExecuteNCfetchFileList {
+    my $subprocess = shift;
+
+    my $command = $subprocess->{curl};
+    $command .= ' -k -X PROPFIND -u ';
+    $command .= $subprocess->{user} . ':' . $subprocess->{pass};
+    $command .= ' "' . $subprocess->{proto} . '://';
+    $command .= $subprocess->{host};
+    $command .= '/remote.php/dav/files/';
+    $command .= $subprocess->{user};
+    $command .= $subprocess->{path};
+    $command .= '" --data \'<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:"><d:prop xmlns:oc="http://owncloud.org/ns"><d:getlastmodified/></d:prop></d:propfind>\'';
+
+    return ExecuteCommand($command);
+}
+
+sub ExecuteNCremoveFile {
+    my $subprocess = shift;
+
+    my $command = $subprocess->{curl};
+    $command .= ' -k -X DELETE -u ';
+    $command .= $subprocess->{user} . ':' . $subprocess->{pass};
     $command .= ' "' . $subprocess->{proto} . '://';
     $command .= $subprocess->{host};
     $command .= '/remote.php/dav/files/';
@@ -598,9 +740,10 @@ sub StorePassword {
     my $err = setKeyValue( $index, $enc_pwd );
     DoTrigger( $name, 'password add' );
 
-    return qq{error while saving the password - $err} if ( defined($err) );
+    return qq{error while saving the password - $err}
+      if ( defined($err) );
 
-    return qq{password successfully saved};
+    return q{password successfully saved};
 }
 
 sub ReadPassword {
