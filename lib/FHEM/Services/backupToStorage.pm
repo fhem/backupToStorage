@@ -449,7 +449,7 @@ sub PushToStorage {
         }
 
         Log3( $name, 4,
-            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid"})
+            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid")}
         );
 
         $hash->{".fhem"}{subprocess} = $subprocess;
@@ -512,7 +512,7 @@ sub KeepLastN {
         }
 
         Log3( $name, 4,
-            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid"})
+            qq{backupToStorage ($name) - execute command asynchronously (PID="$pid")}
         );
 
         $hash->{".fhem"}{subprocess} = $subprocess;
