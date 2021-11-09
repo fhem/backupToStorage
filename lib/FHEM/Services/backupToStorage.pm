@@ -360,7 +360,7 @@ sub Attr {
         }
 
         InternalTimer( gettimeofday() + 1,
-            'FHEM::backupToStorage::_CheckIsDisabledAfterSetAttr', $hash, 0 );
+            'FHEM::Services::backupToStorage::_CheckIsDisabledAfterSetAttr', $hash, 0 );
     }
     elsif ( $attrName eq 'bTS_Type' ) {
         InternalTimer( gettimeofday() + 1,
@@ -455,7 +455,7 @@ sub PushToStorage {
         $hash->{".fhem"}{subprocess} = $subprocess;
 
         InternalTimer( gettimeofday() + 1,
-            "FHEM::backupToStorage::PollChild", $hash );
+            "FHEM::Services::backupToStorage::PollChild", $hash );
     }
 
     Log3( $hash, 4,
@@ -518,7 +518,7 @@ sub KeepLastN {
         $hash->{".fhem"}{subprocess} = $subprocess;
 
         InternalTimer( gettimeofday() + 1,
-            "FHEM::backupToStorage::PollChild", $hash );
+            "FHEM::Services::backupToStorage::PollChild", $hash );
     }
 
     Log3( $hash, 4,
@@ -542,7 +542,7 @@ sub PollChild {
             );
 
             InternalTimer( gettimeofday() + 1,
-                "FHEM::backupToStorage::PollChild", $hash );
+                "FHEM::Services::backupToStorage::PollChild", $hash );
             return;
         }
         else {
