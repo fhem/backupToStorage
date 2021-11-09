@@ -425,7 +425,7 @@ sub PushToStorage {
         $subprocess->{curl}                 = qx(which curl);
         chomp($subprocess->{curl});
         $subprocess->{fhemhost}             = qx(hostname -f);
-        chomp($subprocess->{fhemhost};
+        chomp($subprocess->{fhemhost});
         $subprocess->{type}                 = $hash->{STORAGETYPE};
         $subprocess->{host}                 = AttrVal( $name, 'bTS_Host', '' );
         $subprocess->{user}                 = AttrVal( $name, 'bTS_User', '' );
