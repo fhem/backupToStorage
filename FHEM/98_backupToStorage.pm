@@ -36,21 +36,21 @@ use warnings;
 use utf8;
 use FHEM::Meta;
 
-use FHEM::backupToStorage;
+use FHEM::Services::backupToStorage;
 
 sub backupToStorage_Initialize {
     my $hash = shift;
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}      = \&FHEM::backupToStorage::Set;
-    $hash->{DefFn}      = \&FHEM::backupToStorage::Define;
-    $hash->{NotifyFn}   = \&FHEM::backupToStorage::Notify;
-    $hash->{UndefFn}    = \&FHEM::backupToStorage::Undef;
-    $hash->{AttrFn}     = \&FHEM::backupToStorage::Attr;
-    $hash->{RenameFn}   = \&FHEM::backupToStorage::Rename;
-    $hash->{DeleteFn}   = \&FHEM::backupToStorage::Delete;
-    $hash->{ShutdownFn} = \&FHEM::backupToStorage::Shutdown;
+    $hash->{SetFn}      = \&FHEM::Services::backupToStorage::Set;
+    $hash->{DefFn}      = \&FHEM::Services::backupToStorage::Define;
+    $hash->{NotifyFn}   = \&FHEM::Services::backupToStorage::Notify;
+    $hash->{UndefFn}    = \&FHEM::Services::backupToStorage::Undef;
+    $hash->{AttrFn}     = \&FHEM::Services::backupToStorage::Attr;
+    $hash->{RenameFn}   = \&FHEM::Services::backupToStorage::Rename;
+    $hash->{DeleteFn}   = \&FHEM::Services::backupToStorage::Delete;
+    $hash->{ShutdownFn} = \&FHEM::Services::backupToStorage::Shutdown;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{AttrList} =
         'bTS_Host '

@@ -5,7 +5,7 @@ use POSIX qw(strftime);
 use strict;
 
 my @filenames = (   'FHEM/98_backupToStorage.pm',
-                    'lib/FHEM/backupToStorage.pm',
+                    'lib/FHEM/Services/backupToStorage.pm',
 );
 
 my $controlsfile    = 'controls_backupToStorage.txt';

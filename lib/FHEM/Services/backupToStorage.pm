@@ -2,7 +2,7 @@
 #
 # Developed with Kate
 #
-#  (c) 2020 Copyright: Marko Oldenburg (fhemsupport@cooltux.net)
+#  (c) 2020-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -29,7 +29,7 @@
 #
 ###############################################################################
 
-package FHEM::backupToStorage;
+package FHEM::Services::backupToStorage;
 
 use strict;
 use warnings;
