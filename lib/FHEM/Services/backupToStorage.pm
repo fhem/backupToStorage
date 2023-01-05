@@ -2,7 +2,7 @@
 #
 # Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2020-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
+#  (c) 2020-2023 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -43,7 +43,7 @@ BEGIN {
     GP_Import(
         qw( init_done
           defs
-          )
+        )
     );
 }
 
@@ -406,7 +406,7 @@ sub PushToStorage {
         $subprocess->{backupfile}        = $backupFile;
         $subprocess->{fileNameAtStorage} = $fileNameAtStorage;
         $subprocess->{proto}    = ::AttrVal( $name, 'bTS_Proto', 'https' );
-        $subprocess->{loglevel} = ::AttrVal( $name, 'verbose', 3 );
+        $subprocess->{loglevel} = ::AttrVal( $name, 'verbose',   3 );
 
         my $pid = $subprocess->run();
 
@@ -469,7 +469,7 @@ sub KeepLastN {
         $subprocess->{path}              = ::AttrVal( $name, 'bTS_Path', '' );
         $subprocess->{fileNameAtStorage} = $fileNameAtStorage;
         $subprocess->{proto}     = ::AttrVal( $name, 'bTS_Proto', 'https' );
-        $subprocess->{loglevel}  = ::AttrVal( $name, 'verbose', 3 );
+        $subprocess->{loglevel}  = ::AttrVal( $name, 'verbose',   3 );
         $subprocess->{keeplastn} = ::AttrVal( $name, 'bTS_KeepLastBackups', 5 );
 
         my $pid = $subprocess->run();
