@@ -2,7 +2,7 @@
 #
 # Developed with Kate
 #
-#  (c) 2020-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net) 
+#  (c) 2020-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -181,9 +181,9 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.3.1",
+  "version": "v1.4.0",
   "author": [
-    "Marko Oldenburg <fhemsupport@cooltux.net>"
+    "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
   "x_fhem_maintainer": [
     "CoolTux"
