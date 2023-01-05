@@ -1,8 +1,8 @@
 ###############################################################################
 #
-# Developed with Kate
+# Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2020-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net) 
+#  (c) 2020-2023 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -29,28 +29,33 @@
 #
 ###############################################################################
 
-package main;
+package FHEM::backupToStorage;
 
 use strict;
 use warnings;
 use utf8;
 use FHEM::Meta;
 
-use FHEM::Services::backupToStorage;
+require FHEM::Services::backupToStorage;
 
-sub backupToStorage_Initialize {
+#-- Run before package compilation
+BEGIN {
+    sub ::backupToStorage_Initialize { goto &Initialize }
+}
+
+sub Initialize {
     my $hash = shift;
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}      = \&FHEM::Services::backupToStorage::Set;
-    $hash->{DefFn}      = \&FHEM::Services::backupToStorage::Define;
-    $hash->{NotifyFn}   = \&FHEM::Services::backupToStorage::Notify;
-    $hash->{UndefFn}    = \&FHEM::Services::backupToStorage::Undef;
-    $hash->{AttrFn}     = \&FHEM::Services::backupToStorage::Attr;
-    $hash->{RenameFn}   = \&FHEM::Services::backupToStorage::Rename;
-    $hash->{DeleteFn}   = \&FHEM::Services::backupToStorage::Delete;
-    $hash->{ShutdownFn} = \&FHEM::Services::backupToStorage::Shutdown;
+    $hash->{SetFn}             = \&FHEM::Services::backupToStorage::Set;
+    $hash->{DefFn}             = \&FHEM::Services::backupToStorage::Define;
+    $hash->{NotifyFn}          = \&FHEM::Services::backupToStorage::Notify;
+    $hash->{UndefFn}           = \&FHEM::Services::backupToStorage::Undef;
+    $hash->{AttrFn}            = \&FHEM::Services::backupToStorage::Attr;
+    $hash->{RenameFn}          = \&FHEM::Services::backupToStorage::Rename;
+    $hash->{DeleteFn}          = \&FHEM::Services::backupToStorage::Delete;
+    $hash->{ShutdownFn}        = \&FHEM::Services::backupToStorage::Shutdown;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{AttrList} =
         'bTS_Host '
@@ -76,13 +81,14 @@ sub backupToStorage_Initialize {
 
 =begin html
 
-<a name="backupToStorage"></a>
+<a id="backupToStorage"></a>
 <h3>backupToStorage</h3>
 <ul>
     The module offers the possibility to automatically load the created backup files from the backup module onto a storage.<br>
     <a name="backupToStoragedefine"></a>
     <br>
-    <b>Define</b>
+    <a id="backupToStorage-define"></a>
+    <h4>Define</h4>
     <ul>
         <code>define &lt;name&gt; backupToStorage</code>
         <br>
@@ -92,28 +98,46 @@ sub backupToStorage_Initialize {
         </ul>
         <br>
     </ul>
-    <a name="backupToStorageattributes"></a>
-    <b>Attributs</b>
+    <a id="backupToStorage-attr"></a>
+    <h4>Attributs</h4>
     <ul>
-        <li>bTS_Host - Server name where the storage is located</li>
-        <li>bTS_User - remote user for login</li>
-        <li>bTS_Path - remote path where the upload file should go. e.g. Nextcloud &lt;/FHEM-Backup&gt;</li>
-        <li>bTS_Type - Storage Type, default is Nextcloud</li>
+        <a id="backupToStorage-attr-bTS_Host"></a>
+        <li><i>bTS_Host</i>
+            Server name where the storage is located
+        </li>
+        <a id="backupToStorage-attr-bTS_User"></a>
+        <li><i>bTS_User</i>
+            remote user for login
+        </li>
+        <a id="backupToStorage-attr-bTS_Path"></a>
+        <li><i>bTS_Path</i>
+            remote path where the upload file should go. e.g. Nextcloud &lt;/FHEM-Backup&gt;
+        </li>
+        <a id="backupToStorage-attr-bTS_Type"></a>
+        <li><i>bTS_Type</i>
+            Storage Type, default is Nextcloud
+        </li>
     </ul>
     <br>
-    <a name="backupToStorageset"></a>
-    <b>Set</b>
+    <a id="backupToStorage-set"></a>
+    <h4>Set</h4>
     <ul>
-        <li>addpassword - puts the storage password in the keyfile / !!! don't use = !!!</li>
-        <li>deletepassword - removes the storage password from the keyfile</li>
+        <a id="backupToStorage-set-addpassword"></a>
+        <li><i>addpassword</i>
+            puts the storage password in the keyfile / !!! don't use = !!!
+        </li>
+        <a id="backupToStorage-set-deletepassword"></a>
+        <li><i>deletepassword</i>
+            removes the storage password from the keyfile
+        </li>
     </ul>
     <br>
-    <a name="backupToStoragereadings"></a>
+    <a id="backupToStorage-readings"></a>
     <b>Readings</b>
     <ul>
-        <li>state - shows the current status of the module</li>
-        <li>fhemBackupFile - the path of the last backup file is automatically set by the backup module</li>
-        <li>uploadState - Status of the last upload.</li>
+        <li><b>state</b> - shows the current status of the module</li>
+        <li><b>fhemBackupFile</b> - the path of the last backup file is automatically set by the backup module</li>
+        <li><b>uploadState</b> - Status of the last upload.</li>
     </ul>
 </ul>
 
@@ -121,13 +145,14 @@ sub backupToStorage_Initialize {
 
 =begin html_DE
 
-<a name="backupToStorage"></a>
+<a id="backupToStorage"></a>
 <h3>backupToStorage</h3>
 <ul>
     Das Modul bietet die M&ouml;glichkeit die erstellten Backupdateien vom Modul backup automatisiert auf ein Storage zu laden.<br>
     <a name="backupToStoragedefine"></a>
     <br>
-    <b>Define</b>
+    <a id="backupToStorage-define"></a>
+    <h4>Define</h4>
     <ul>
         <code>define &lt;name&gt; backupToStorage</code>
         <br>
@@ -137,29 +162,46 @@ sub backupToStorage_Initialize {
         </ul>
         <br>
     </ul>
-    <a name="backupToStorageattributes"></a>
-    <b>Attribute</b>
+    <a id="backupToStorage-attr"></a>
+    <h4>Attribute</h4>
     <ul>
-        <li>bTS_Host - Servername wo sich das Storage drauf befindet</li>
-        <li>bTS_User - remote User f&uuml;r den Login</li>
-        <li>bTS_Path - remote Path wohin das uploadfile soll. z.B. Nextcloud &lt;/FHEM-Backup&gt;</li>
-        <li>bTS_Type - Storage Type, default ist Nextcloud</li>
-        <li>bTS_Type - Storage Type, default ist Nextcloud</li>
+        <a id="backupToStorage-attr-bTS_Host"></a>
+        <li><i>bTS_Host</i>
+            Servername wo sich das Storage drauf befindet
+        </li>
+        <a id="backupToStorage-attr-bTS_User"></a>
+        <li><i>bTS_User</i>
+            remote User f&uuml;r den Login
+        </li>
+        <a id="backupToStorage-attr-bTS_Path"></a>
+        <li><i>bTS_Path</i>
+            remote Path wohin das uploadfile soll. z.B. Nextcloud &lt;/FHEM-Backup&gt;
+        </li>
+        <a id="backupToStorage-attr-bTS_Type"></a>
+        <li><i>bTS_Type</i>
+            Storage Type, default ist Nextcloud
+        </li>
     </ul>
     <br>
-    <a name="backupToStorageset"></a>
-    <b>Set</b>
+    <a id="backupToStorage-set"></a>
+    <h4>Set</h4>
     <ul>
-        <li>addpassword - setzt das Storage Passwort ins Keyfile / !!!Keine = verwenden!!!</li>
-        <li>deletepassword - entfernt das Storage Passwort aus dem Keyfile</li>
+        <a id="backupToStorage-set-addpassword"></a>
+        <li><i>addpassword</i><br>
+            setzt das Storage Passwort ins Keyfile / !!!Keine = verwenden!!!
+        </li>
+        <a id="backupToStorage-set-deletepassword"></a>
+        <li><i>deletepassword</i><br>
+            entfernt das Storage Passwort aus dem Keyfile
+        </li>
     </ul>
     <br>
-    <a name="backupToStoragereadings"></a>
-    <b>Readings</b>
+    <a id="backupToStorage-readings"></a>
+    <h4>Readings</h4>
     <ul>
-        <li>state - zeigt den aktuellen Status des Modules an</li>
-        <li>fhemBackupFile - der Pfad des letzten Backupfiles, wird automatisch vom backup Modul gesetzt</li>
-        <li>uploadState - Status des letzten uploads.</li>
+        <li><b>state</b> - zeigt den aktuellen Status des Modules an</li>
+        <li><b>fhemBackupFile</b> - der Pfad des letzten Backupfiles, wird automatisch vom backup Modul gesetzt</li>
+        <li><b>uploadState</b> - Status des letzten uploads.</li>
     </ul>
 </ul>
 
@@ -181,15 +223,15 @@ sub backupToStorage_Initialize {
   ],
   "release_status": "devepolment",
   "license": "GPL_2",
-  "version": "v1.3.1",
+  "version": "v2.0.0",
   "author": [
-    "Marko Oldenburg <fhemsupport@cooltux.net>"
+    "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
   "x_fhem_maintainer": [
     "CoolTux"
   ],
   "x_fhem_maintainer_github": [
-    "LeonGaultier"
+    "CoolTuxNet"
   ],
   "prereqs": {
     "runtime": {
