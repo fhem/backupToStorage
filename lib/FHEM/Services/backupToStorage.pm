@@ -217,7 +217,7 @@ sub Notify {
         && $init_done
       );
 
-    readingsSingleUpdate(
+    ::readingsSingleUpdate(
         $hash, 'state',
         (
             (
@@ -271,13 +271,13 @@ sub Set {
         return qq{usage: $cmd}
           if ( scalar( @{$aArg} ) != 0 );
 
-        readingsSingleUpdate( $hash, 'state', 'ready', 1 );
+        ::readingsSingleUpdate( $hash, 'state', 'ready', 1 );
     }
     elsif ( lc $cmd eq 'inactive' ) {
         return qq{usage: $cmd}
           if ( scalar( @{$aArg} ) != 0 );
 
-        readingsSingleUpdate( $hash, 'state', $cmd, 1 );
+        ::readingsSingleUpdate( $hash, 'state', $cmd, 1 );
     }
     else {
         my $list = 'active:noArg inactive:noArg';
@@ -352,7 +352,7 @@ sub _CheckIsDisabledAfterSetAttr {
     ::Log3( $name, 3,
         qq{backupToStorage ($name) - _CheckIsDisabledAfterSetAttr} );
 
-    readingsSingleUpdate( $hash, 'state', $state, 1 )
+    ::readingsSingleUpdate( $hash, 'state', $state, 1 )
       if ( ::ReadingsVal( $name, 'state', 'ready' ) ne $state );
 
     return;
@@ -412,7 +412,7 @@ sub PushToStorage {
 
         my $pid = $subprocess->run();
 
-        readingsSingleUpdate( $hash, 'state', ' file upload in progress', 1 );
+        ::readingsSingleUpdate( $hash, 'state', ' file upload in progress', 1 );
 
         if ( !defined($pid) ) {
             ::Log3( $name, 1,
@@ -420,7 +420,7 @@ qq{backupToStorage ($name) - Cannot execute command asynchronously}
             );
 
             CleanSubprocess($hash);
-            readingsSingleUpdate( $hash, 'state',
+            ::readingsSingleUpdate( $hash, 'state',
                 'Cannot execute command asynchronously', 1 );
             return;
         }
@@ -476,7 +476,7 @@ sub KeepLastN {
 
         my $pid = $subprocess->run();
 
-        readingsSingleUpdate( $hash, 'state',
+        ::readingsSingleUpdate( $hash, 'state',
             ' clean up pass last N in progress', 1 );
 
         if ( !defined($pid) ) {
@@ -485,7 +485,7 @@ qq{backupToStorage ($name) - Cannot execute command asynchronously}
             );
 
             CleanSubprocess($hash);
-            readingsSingleUpdate( $hash, 'state',
+            ::readingsSingleUpdate( $hash, 'state',
                 'Cannot execute command asynchronously', 1 );
             return;
         }
@@ -808,7 +808,7 @@ sub CheckAttributsForCredentials {
         :                                           $status
     );
 
-    return readingsSingleUpdate( $hash, 'state', $status, 1 );
+    return ::readingsSingleUpdate( $hash, 'state', $status, 1 );
 }
 
 sub WriteReadings {
