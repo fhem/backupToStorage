@@ -108,6 +108,8 @@ sub Define {
     my $hash = shift // return;
     my $aArg = shift // return;
 
+    my $version;
+
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
 
     $version = FHEM::Meta::Get( $hash, 'version' );
